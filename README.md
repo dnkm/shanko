@@ -1,2 +1,0 @@
-# shanko
-Created with CodeSandbox
