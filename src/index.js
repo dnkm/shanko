@@ -12,15 +12,11 @@ io.on("connection", socket => {
 
   // login sockets
   socket.on("rqst_login", data => user.login(data, socket, game.games));
-  socket.on("rqst_userinfo", data => user.profile(data.user, socket));
+  socket.on("rqst_userinfo", () => user.profile(socket));
 
   // main lobby sockets
   socket.on("rqst_rooms", () => socket.emit("resp_rooms", game.rooms));
   socket.on("rqst_join", data => game.join(data, socket, io));
-  socket.on("rqst_quick_join", data => {
-    let room = game.available(data.user);
-    game.join({ user: data.user, room: room }, socket, io);
-  });
 
   // game sockets
 });
