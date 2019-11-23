@@ -3,7 +3,7 @@ var user = require("./user");
 
 const SLOT = {
   occupied: false,
-  user: undefined,
+  id: undefined,
   dealer: false,
   active: false,
   sid: undefined
@@ -40,17 +40,17 @@ let timers = {};
 function join(data, socket, io) {
   if (
     rooms[data.rank][data.room].players > config.MAXPLAYERS - 1 ||
-    user.users[data.user] === undefined
+    user.ids[data.id] === undefined
   )
     return;
   if (games[data.room] === undefined) {
     createGame(data.room);
   }
-  if (games[data.room].players[data.user] === undefined) {
+  if (games[data.room].players[data.id] === undefined) {
     socket.join(data.room);
-    games[data.room].players[data.user] = newPlayer(data.user);
+    games[data.room].players[data.id] = newPlayer(data.id);
     findSlot(data, socket.id);
-    user.users[data.user].room = data.room;
+    user.ids[data.id].room = data.room;
     rooms[data.rank][data.room].players++;
     rooms[data.rank][data.room].status = "waiting";
   }
@@ -86,18 +86,18 @@ function end(data, io) {
 
 function cleanup(data, io) {
   games[data.room].slots.forEach((slot, i) => {
-    if (io.sockets.sockets[slot.sid] === undefined && slot.user !== undefined) {
-      delete user.users[slot.user];
-      delete games[data.room].players[slot.user];
+    if (io.sockets.sockets[slot.sid] === undefined && slot.id !== undefined) {
+      delete user.ids[slot.id];
+      delete games[data.room].players[slot.id];
       games[data.room].slots[i] = { ...SLOT };
       rooms[data.rank][data.room].players--;
     }
   });
 }
 
-function newPlayer(user) {
+function newPlayer(id) {
   return {
-    user: user,
+    id,
     hand: [],
     hidden: true,
     score: 0,
@@ -109,7 +109,7 @@ function newPlayer(user) {
 function findSlot(data, sid) {
   for (let i = 0; i < games[data.room].slots.length; i++) {
     if (!games[data.room].slots[i].occupied) {
-      games[data.room].slots[i].user = data.user;
+      games[data.room].slots[i].id = data.id;
       games[data.room].slots[i].occupied = true;
       games[data.room].slots[i].sid = sid;
       break;

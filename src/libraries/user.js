@@ -1,6 +1,6 @@
-let userbase = {
+let users = {
   david: {
-    username: "david",
+    id: "david",
     password: "0000",
     nickname: "coffee",
     gender: 0,
@@ -10,7 +10,7 @@ let userbase = {
     lose: 40
   },
   jay: {
-    username: "jay",
+    id: "jay",
     password: "0000",
     nickname: "satisfiedlemon",
     gender: 0,
@@ -20,7 +20,7 @@ let userbase = {
     lose: 40
   },
   daniel: {
-    username: "daniel",
+    id: "daniel",
     password: "0000",
     nickname: "dnkm",
     gender: 0,
@@ -30,7 +30,7 @@ let userbase = {
     lose: 40
   },
   matthew: {
-    username: "matthew",
+    id: "matthew",
     password: "0000",
     nickname: "akai",
     gender: 0,
@@ -39,8 +39,8 @@ let userbase = {
     win: 50,
     lose: 40
   },
-  test: {
-    username: "test",
+  test00: {
+    id: "test00",
     password: "0000",
     nickname: "test",
     gender: 0,
@@ -50,7 +50,7 @@ let userbase = {
     lose: 0
   },
   guest1: {
-    username: "guest1",
+    id: "guest1",
     password: "0000",
     nickname: "beep",
     gender: 0,
@@ -60,7 +60,7 @@ let userbase = {
     lose: 0
   },
   guest2: {
-    username: "guest2",
+    id: "guest2",
     password: "0000",
     nickname: "boop",
     gender: 0,
@@ -71,51 +71,50 @@ let userbase = {
   }
 };
 
-let users = {};
+let ids = {};
 let sockets = {};
 
 function profile(socket) {
   socket.emit("resp_userinfo", {
-    nickname: userbase[sockets[socket.id]].nickname,
-    gender: userbase[sockets[socket.id]].gender,
-    cash: userbase[sockets[socket.id]].cash,
-    imgnumber: userbase[sockets[socket.id]].imgnumber,
-    win: userbase[sockets[socket.id]].win,
-    lose: userbase[sockets[socket.id]].lose
+    nickname: users[sockets[socket.id]].nickname,
+    gender: users[sockets[socket.id]].gender,
+    cash: users[sockets[socket.id]].cash,
+    imgnumber: users[sockets[socket.id]].imgnumber,
+    win: users[sockets[socket.id]].win,
+    lose: users[sockets[socket.id]].lose
   });
 }
 
 function login(data, socket, games) {
   if (
-    userbase[data.user] === undefined ||
-    userbase[data.user].password !== data.password
+    users[data.id] === undefined ||
+    users[data.id].password !== data.password
   ) {
     socket.emit("resp_login", { retcode: 1 });
     return;
   }
-  socket.join("users");
-  if (users[data.user] !== undefined) {
+  socket.join("ids");
+  if (ids[data.id] !== undefined) {
     updateSocket(data.user, socket, socket.id, games);
-    users[data.user] = { ...users[data.user], sid: socket.id };
+    ids[data.id] = { ...ids[data.id], sid: socket.id };
   } else {
-    users[data.user] = { sid: socket.id, room: "none" };
-    sockets[socket.id] = data.user;
+    ids[data.id] = { sid: socket.id, room: "none" };
+    sockets[socket.id] = data.id;
   }
   socket.emit("resp_login", { sid: socket.id, retcode: 0 });
 }
 
-function updateSocket(user, socket, sid, games) {
-  if (users[user].room !== "none") {
-    socket.join(users[user].room);
+function updateSocket(id, socket, sid, games) {
+  if (ids[id].room !== "none") {
+    socket.join(ids[id].room);
   }
-  delete sockets[users[user].sid];
-  sockets[sid] = user;
-  users[user].sid = sid;
+  delete sockets[ids[id].sid];
+  sockets[sid] = id;
+  ids[id].sid = sid;
 }
 
 module.exports = {
-  userbase: userbase,
-  users: users,
+  ids: ids,
   profile: profile,
   login: login
 };
