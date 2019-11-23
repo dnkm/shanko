@@ -95,7 +95,7 @@ function login(data, socket, games) {
   }
   socket.join("ids");
   if (ids[data.id] !== undefined) {
-    updateSocket(data.user, socket, socket.id, games);
+    updateSocket(data.id, socket, socket.id, games);
     ids[data.id] = { ...ids[data.id], sid: socket.id };
   } else {
     ids[data.id] = { sid: socket.id, room: "none" };
