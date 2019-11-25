@@ -8,6 +8,15 @@ app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 
 io.on("connection", socket => {
   console.log("user " + socket.id + " has connected");
+  
+  socket.use((socket, next) => {
+    try {
+        if (socket.length > 1 && typeof socket[1] === 'string')
+            socket[1] = JSON.parse(socket[1])
+    } catch(err) {console.error(err); }
+    next();
+  })
+  
   socket.on("disconnect", () => console.log("user has disconnected"));
 
   // login sockets
