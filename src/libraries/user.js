@@ -85,6 +85,16 @@ function profile(socket) {
   });
 }
 
+function changeGender(data, socket) {
+  users[sockets[socket.id]].gender = data.gender;
+  socket.emit("resp_changegender", { retcode: 0, gender: data.gender});
+}
+
+function changeImgNumber(data, socket) {
+  users[sockets[socket.id]].imgnumber = data.imgnumber;
+  socket.emit("resp_changeimgnumber", { retcode: 0, imgnumber: data.imgnumber });
+}
+
 function login(data, socket, games) {
   if (
     users[data.id] === undefined ||
@@ -116,5 +126,7 @@ function updateSocket(id, socket, sid, games) {
 module.exports = {
   ids: ids,
   profile: profile,
-  login: login
+  login: login,
+  changeGender: changeGender,
+  changeImgNumber: changeImgNumber
 };
