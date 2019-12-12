@@ -1,4 +1,4 @@
-let users = {
+let userbase = {
   david: {
     id: "david",
     password: "0000",
@@ -71,62 +71,88 @@ let users = {
   }
 };
 
-let ids = {};
-let sockets = {};
-
-function profile(socket) {
-  socket.emit("resp_userinfo", {
-    nickname: users[sockets[socket.id]].nickname,
-    gender: users[sockets[socket.id]].gender,
-    cash: users[sockets[socket.id]].cash,
-    imgnumber: users[sockets[socket.id]].imgnumber,
-    win: users[sockets[socket.id]].win,
-    lose: users[sockets[socket.id]].lose
-  });
-}
-
-function changeGender(data, socket) {
-  users[sockets[socket.id]].gender = data.gender;
-  socket.emit("resp_changegender", { retcode: 0, gender: data.gender});
-}
-
-function changeImgNumber(data, socket) {
-  users[sockets[socket.id]].imgnumber = data.imgnumber;
-  socket.emit("resp_changeimgnumber", { retcode: 0, imgnumber: data.imgnumber });
-}
-
-function login(data, socket, games) {
-  if (
-    users[data.id] === undefined ||
-    users[data.id].password !== data.password
-  ) {
-    socket.emit("resp_login", { retcode: 1 });
-    return;
+class User {
+  constructor(data, socket) {
+    this.id = data.id;
+    this.sid = socket.id;
+    this.nickname = userbase[data.id].nickname;
+    this.gender = userbase[data.id].gender;
+    this.cash = userbase[data.id].cash;
+    this.imgnumber = userbase[data.id].imgnumber;
+    this.win = userbase[data.id].win;
+    this.lose = userbase[data.id].lose;
+    this.room = undefined;
   }
-  socket.join("ids");
-  if (ids[data.id] !== undefined) {
-    updateSocket(data.id, socket, socket.id, games);
-    ids[data.id] = { ...ids[data.id], sid: socket.id };
-  } else {
-    ids[data.id] = { sid: socket.id, room: "none" };
-    sockets[socket.id] = data.id;
-  }
-  socket.emit("resp_login", { sid: socket.id, retcode: 0 });
 }
 
-function updateSocket(id, socket, sid, games) {
-  if (ids[id].room !== "none") {
-    socket.join(ids[id].room);
+class Users {
+  constructor() {
+    this.users = [];
   }
-  delete sockets[ids[id].sid];
-  sockets[sid] = id;
-  ids[id].sid = sid;
+
+  profile(socket) {
+    let user = this.getUser(socket.id);
+    if (user === undefined) {
+      socket.emit("resp_userinfo", { retcode: 1 });
+      return;
+    }
+    socket.emit("resp_userinfo", {
+      nickname: user.nickname,
+      gender: user.gender,
+      cash: user.cash,
+      imgnumber: user.imgnumber,
+      win: user.win,
+      lose: user.lose
+    });
+  }
+  changeGender(data, socket) {
+    for (let i = 0; i < this.users.length; i++) {
+      if (this.users[i].sid === socket.id) {
+        this.users[i].gender = data.gender;
+        userbase[this.users[i].id].gender = data.gender;
+        socket.emit("resp_changegender", { retcode: 0, gender: data.gender });
+        return;
+      }
+    }
+    socket.emit("resp_changegender", { retcode: 1 });
+  }
+
+  changeImgNumber(data, socket) {
+    for (let i = 0; i < this.users.length; i++) {
+      if (this.users[i].sid === socket.id) {
+        this.users[i].imgnumber = data.imgnumber;
+        userbase[this.users[i].id].imgnumber = data.imgnumber;
+        socket.emit("resp_changeimgnumber", {
+          retcode: 0,
+          imgnumber: data.imgnumber
+        });
+        return;
+      }
+    }
+    socket.emit("resp_changeimgnumber", { retcode: 1 });
+  }
+
+  login(data, socket) {
+    if (
+      userbase[data.id] === undefined ||
+      userbase[data.id].password !== data.password
+    ) {
+      socket.emit("resp_login", { retcode: 1 });
+      return;
+    }
+    let user = this.getUser(data.id);
+    if (user === undefined) this.users.push(new User(data, socket));
+    else user.sid = socket.id;
+    socket.emit("resp_login", { retcode: 0, sid: socket.id });
+  }
+
+  getUser(data) {
+    for (let i = 0; i < this.users.length; i++) {
+      if (this.users[i].sid === data || this.users[i].id === data)
+        return this.users[i];
+    }
+    return undefined;
+  }
 }
 
-module.exports = {
-  ids: ids,
-  profile: profile,
-  login: login,
-  changeGender: changeGender,
-  changeImgNumber: changeImgNumber
-};
+module.exports = new Users();

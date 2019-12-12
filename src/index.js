@@ -1,8 +1,11 @@
-var game = require("./libraries/game");
-var user = require("./libraries/user");
-var app = require("express")();
-var http = require("http").createServer(app);
-var io = require("socket.io")(http, { pingInterval: 2000, pingTimeout: 5000 });
+const Users = require("./libraries/user");
+const Lobby = require("./libraries/lobby");
+const app = require("express")();
+const http = require("http").createServer(app);
+const io = require("socket.io")(http, {
+  pingInterval: 2000,
+  pingTimeout: 5000
+});
 
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 
@@ -21,15 +24,18 @@ io.on("connection", socket => {
 
   socket.on("disconnect", () => console.log("user has disconnected"));
 
-  // login sockets
-  socket.on("rqst_login", data => user.login(data, socket, game.games));
-  socket.on("rqst_userinfo", () => user.profile(socket));
+  // user sockets
+  socket.on("rqst_login", data => Users.login(data, socket));
+  socket.on("rqst_userinfo", () => Users.profile(socket));
+  socket.on("rqst_changegender", data => Users.changeGender(data, socket));
+  socket.on("rqst_changeimgnumber", data =>
+    Users.changeImgNumber(data, socket)
+  );
 
-  // main lobby sockets
-  socket.on("rqst_rooms", () => socket.emit("resp_rooms", game.rooms));
-  socket.on("rqst_join", data => game.join(data, socket, io));
-  socket.on("rqst_changegender", data => user.changeGender(data, socket));
-  socket.on("rqst_changeimgnumber", data => user.changeImgNumber(data, socket));
+  // lobby sockets
+  socket.on("rqst_rooms", () => socket.emit("resp_rooms", Lobby.rooms));
+  socket.on("rqst_roomenter", data => Lobby.roomEnter(data, socket, io));
+  socket.on("rqst_roomleave", () => Lobby.roomLeave(socket, io));
 
   // game sockets
 });
