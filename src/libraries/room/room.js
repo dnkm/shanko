@@ -33,8 +33,8 @@ class Room {
       this.players.push(new Player(socket.id));
       socket.join(this.roomNumber);
     }
-    socket.emit("resp_roomenter", { retcode: 0 });
-    io.to(this.roomNumber).emit("resp_roomupdate", this);
+    socket.emit("resp_room_enter", { retcode: 0 });
+    io.to(this.roomNumber).emit("resp_room_update", this);
   }
 
   leave(user, socket, io) {
@@ -42,8 +42,8 @@ class Room {
       user.room = undefined;
       this.players = this.players.filter(p => p.id !== user.id);
       socket.leave(this.roomNumber);
-      socket.emit("resp_roomleave", { retcode: 0 });
-      io.to(this.roomNumber).emit("resp_roomupdate", this);
+      socket.emit("resp_room_leave", { retcode: 0 });
+      io.to(this.roomNumber).emit("resp_room_update", this);
     }
   }
 
