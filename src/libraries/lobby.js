@@ -41,7 +41,7 @@ class Lobby {
       this.rooms[user.room].leave(user, socket, io);
       return;
     }
-    socket.emit("resp_roomleave", { retcode: 1 });
+    socket.emit("resp_room_leave", { retcode: 1 });
   }
 }
 
