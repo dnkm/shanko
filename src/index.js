@@ -35,7 +35,7 @@ io.on("connection", socket => {
   // lobby sockets
   socket.on("rqst_rooms", () => socket.emit("resp_rooms", Lobby.rooms));
   socket.on("rqst_room_enter", data => Lobby.roomEnter(data, socket, io));
-  socket.on("rqst_room_leave", () => Lobby.roomLeave(socket, io));
+  socket.on("rqst_room_leave", data => Lobby.roomLeave(data, socket, io));
 
   // game sockets
 });
