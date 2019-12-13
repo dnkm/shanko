@@ -23,13 +23,14 @@ class Lobby {
   }
 
   roomEnter(data, socket, io) {
-    if (this.rooms[data.room].players.length > config.MAXPLAYERS - 1) {
+    let room = this.findRoom(data.roomnumber);
+    if (this.rooms[room].players.length > config.MAXPLAYERS - 1) {
       socket.emit("resp_roomenter", { retcode: 1 });
     }
     let user = Users.getUser(socket.id);
     if (user) {
-      user.room = data.room;
-      this.rooms[data.room].enter(user, socket, io);
+      user.room = room;
+      this.rooms[room].enter(user, socket, io);
       return;
     }
     socket.emit("resp_roomenter", { retcode: 2 });
@@ -37,11 +38,18 @@ class Lobby {
 
   roomLeave(socket, io) {
     let user = Users.getUser(socket.id);
-    if (user.room) {
+    if (user && user.room) {
       this.rooms[user.room].leave(user, socket, io);
       return;
     }
     socket.emit("resp_room_leave", { retcode: 1 });
+  }
+
+  findRoom(room) {
+    for (let i = 0; this.rooms.length; i++) {
+      if (this.rooms[i].roomnumber === room) return i;
+    }
+    return -1;
   }
 }
 
