@@ -24,8 +24,12 @@ class Lobby {
 
   roomEnter(data, socket, io) {
     let room = this.findRoom(data.roomnumber);
+    if (room === -1) {
+      socket.emit("resp_room_enter", { retcode: 2 });
+      return;
+    }
     if (this.rooms[room].players.length > config.MAXPLAYERS - 1) {
-      socket.emit("resp_roomenter", { retcode: 1 });
+      socket.emit("resp_room_enter", { retcode: 1 });
     }
     let user = Users.getUser(socket.id);
     if (user) {
@@ -33,7 +37,7 @@ class Lobby {
       this.rooms[room].enter(user, socket, io);
       return;
     }
-    socket.emit("resp_roomenter", { retcode: 2 });
+    socket.emit("resp_room_enter", { retcode: 2 });
   }
 
   roomLeave(socket, io) {
@@ -46,7 +50,7 @@ class Lobby {
   }
 
   findRoom(room) {
-    for (let i = 0; this.rooms.length; i++) {
+    for (let i = 0; i < this.rooms.length; i++) {
       if (this.rooms[i].roomnumber === room) return i;
     }
     return -1;

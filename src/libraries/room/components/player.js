@@ -2,9 +2,12 @@ const Users = require("../../user");
 
 class Player {
   constructor(sid) {
-    let u = Users.getUser(sid);
-    this.id = u.id;
-    this.cash = u.cash;
+    let user = Users.getUser(sid);
+    this.sid = user.sid;
+    this.id = user.id;
+    this.nickname = user.nickname;
+    this.cash = user.cash;
+    this.imgnumber = user.imgnumber;
     this.hand = [];
     this.banker = false;
   }
