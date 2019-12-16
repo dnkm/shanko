@@ -93,27 +93,32 @@ class Users {
   profile(socket) {
     let user = this.getUser(socket.id);
     if (user === undefined) {
+      console.log("resp_userinfo: ", "{ retcode: 1 } - user not found");
       socket.emit("resp_userinfo", { retcode: 1 });
       return;
     }
-    socket.emit("resp_userinfo", {
+    let u = {
       nickname: user.nickname,
       gender: user.gender,
       cash: user.cash,
       imgnumber: user.imgnumber,
       win: user.win,
       lose: user.lose
-    });
+    };
+    console.log("resp_userinfo: ", u);
+    socket.emit("resp_userinfo", u);
   }
   changeGender(data, socket) {
     for (let i = 0; i < this.users.length; i++) {
       if (this.users[i].sid === socket.id) {
         this.users[i].gender = data.gender;
         userbase[this.users[i].id].gender = data.gender;
+        console.log("resp_changegender: ", { retcode: 0, gender: data.gender });
         socket.emit("resp_changegender", { retcode: 0, gender: data.gender });
         return;
       }
     }
+    console.log("resp_changegender: ", "{ retcode: 1} - sid not found");
     socket.emit("resp_changegender", { retcode: 1 });
   }
 
@@ -122,6 +127,10 @@ class Users {
       if (this.users[i].sid === socket.id) {
         this.users[i].imgnumber = data.imgnumber;
         userbase[this.users[i].id].imgnumber = data.imgnumber;
+        console.log("resp_changeimgnumber: ", {
+          retcode: 0,
+          imgnumber: data.imgnumber
+        });
         socket.emit("resp_changeimgnumber", {
           retcode: 0,
           imgnumber: data.imgnumber
@@ -129,6 +138,7 @@ class Users {
         return;
       }
     }
+    console.log("resp_changeimgnumber: ", "{ retcode: 1} - sid not found");
     socket.emit("resp_changeimgnumber", { retcode: 1 });
   }
 
@@ -137,12 +147,14 @@ class Users {
       userbase[data.id] === undefined ||
       userbase[data.id].password !== data.password
     ) {
+      console.log("resp_login: ", "{ retcode: 1 } - login unsuccessful");
       socket.emit("resp_login", { retcode: 1 });
       return;
     }
     let user = this.getUser(data.id);
     if (user === undefined) this.users.push(new User(data, socket));
     else user.sid = socket.id;
+    console.log("resp_login: ", { retcode: 0, sid: socket.id });
     socket.emit("resp_login", { retcode: 0, sid: socket.id });
   }
 

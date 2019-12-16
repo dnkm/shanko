@@ -33,7 +33,9 @@ class Room {
       this.players.push(new Player(socket.id));
       socket.join(this.roomnumber);
     }
+    console.log("resp_room_enter: ", { retcode: 0 });
     socket.emit("resp_room_enter", { retcode: 0 });
+    console.log("resp_room_update: ", this);
     io.to(this.roomnumber).emit("resp_room_update", this);
   }
 
@@ -42,7 +44,9 @@ class Room {
       user.room = undefined;
       this.players = this.players.filter(p => p.id !== user.id);
       socket.leave(this.roomnumber);
+      console.log("resp_room_leave: ", { retcode: 0 });
       socket.emit("resp_room_leave", { retcode: 0 });
+      console.log("resp_room_update: ", this);
       io.to(this.roomnumber).emit("resp_room_update", this);
     }
   }
@@ -51,6 +55,13 @@ class Room {
     for (let i = 0; i < this.players.length; i++)
       if (id === this.players[i].id) return true;
     return false;
+  }
+
+  getUserList(socket) {
+    let sids = [];
+    this.players.forEach(p => sids.push(p.sid));
+    console.log("resp_ingame_userlist: ", sids);
+    socket.emit("resp_ingame_userlist", sids);
   }
 }
 
