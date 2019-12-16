@@ -41,7 +41,7 @@ io.on('connection', (socket) => {
 
 	// lobby sockets
 	socket.on('rqst_rooms', () => {
-		console.log('rqst_rooms: ', 'no params');
+		console.log(`rqst_rooms: ', 'no params. Return: ${Lobby.rooms.length} rooms`);
 		socket.emit('resp_rooms', Lobby.rooms);
 	});
 	socket.on('rqst_room_enter', (data) => {
