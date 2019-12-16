@@ -25,27 +25,32 @@ class Lobby {
   roomEnter(data, socket, io) {
     let room = this.findRoom(data.roomnumber);
     if (room === -1) {
+      console.log("resp_room_enter: ", "{ retcode: 2 } - room not found");
       socket.emit("resp_room_enter", { retcode: 2 });
       return;
     }
     if (this.rooms[room].players.length > config.MAXPLAYERS - 1) {
+      console.log("resp_room_enter: ", "{ retcode: 1 } - room full");
       socket.emit("resp_room_enter", { retcode: 1 });
     }
     let user = Users.getUser(socket.id);
     if (user) {
-      user.room = room;
+      user.room = data.roomnumber;
       this.rooms[room].enter(user, socket, io);
       return;
     }
+    console.log("resp_room_enter: ", "{ retcode: 2 } - unknown error");
     socket.emit("resp_room_enter", { retcode: 2 });
   }
 
   roomLeave(socket, io) {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
-      this.rooms[user.room].leave(user, socket, io);
+      let room = this.findRoom(user.room);
+      this.rooms[room].leave(user, socket, io);
       return;
     }
+    console.log("resp_room_leave: ", "{ retcode: 1} - user or room not found");
     socket.emit("resp_room_leave", { retcode: 1 });
   }
 
@@ -54,6 +59,44 @@ class Lobby {
       if (this.rooms[i].roomnumber === room) return i;
     }
     return -1;
+  }
+
+  getUserList(socket) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].getUserList(socket);
+    } else {
+      console.log(
+        "resp_ingame_userlist: ",
+        "{ retcode: 1 } - user or room not found"
+      );
+      socket.emit("resp_ingame_userlist", { retcode: 1 });
+    }
+  }
+
+  getUserInfo(data, socket) {
+    let user = Users.getUser(socket.id);
+    let user2 = Users.getUser(data.sid);
+    if (user && user2 && user.room && user2.room) {
+      if (user.room === user2.room) {
+        let u = {
+          sid: user2.sid,
+          nickname: user2.nickname,
+          balance: user2.cash,
+          imgnumber: user2.imgnumber,
+          gender: user2.gender
+        };
+        console.log("resp_ingame_userinfo: ", u);
+        socket.emit("resp_ingame_userinfo", u);
+        return;
+      }
+    }
+    console.log(
+      "resp_ingame_userinfo: ",
+      "{retcode: 1} - user or room not found"
+    );
+    socket.emit("resp_ingame_userinfo", { retcode: 1 });
   }
 }
 

@@ -6,7 +6,7 @@ class Player {
     this.sid = user.sid;
     this.id = user.id;
     this.nickname = user.nickname;
-    this.cash = user.cash;
+    this.balance = user.cash;
     this.imgnumber = user.imgnumber;
     this.hand = [];
     this.banker = false;
