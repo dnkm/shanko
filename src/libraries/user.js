@@ -1,6 +1,7 @@
 let userbase = {
   david: {
     id: "david",
+    sid: 0,
     password: "0000",
     nickname: "coffee",
     gender: 0,
@@ -11,6 +12,7 @@ let userbase = {
   },
   jay: {
     id: "jay",
+    sid: 1,
     password: "0000",
     nickname: "satisfiedlemon",
     gender: 0,
@@ -21,6 +23,7 @@ let userbase = {
   },
   daniel: {
     id: "daniel",
+    sid: 3,
     password: "0000",
     nickname: "dnkm",
     gender: 0,
@@ -31,6 +34,7 @@ let userbase = {
   },
   matthew: {
     id: "matthew",
+    sid: 4,
     password: "0000",
     nickname: "akai",
     gender: 0,
@@ -41,6 +45,7 @@ let userbase = {
   },
   test00: {
     id: "test00",
+    sid: 5,
     password: "0000",
     nickname: "test",
     gender: 0,
@@ -51,6 +56,7 @@ let userbase = {
   },
   guest1: {
     id: "guest1",
+    sid: 6,
     password: "0000",
     nickname: "beep",
     gender: 0,
@@ -61,6 +67,7 @@ let userbase = {
   },
   guest2: {
     id: "guest2",
+    sid: 7,
     password: "0000",
     nickname: "boop",
     gender: 0,
@@ -74,7 +81,8 @@ let userbase = {
 class User {
   constructor(data, socket) {
     this.id = data.id;
-    this.sid = socket.id;
+    this.sid = userbase[data.id].sid;
+    this.socket = socket.id;
     this.nickname = userbase[data.id].nickname;
     this.gender = userbase[data.id].gender;
     this.cash = userbase[data.id].cash;
@@ -110,7 +118,7 @@ class Users {
   }
   changeGender(data, socket) {
     for (let i = 0; i < this.users.length; i++) {
-      if (this.users[i].sid === socket.id) {
+      if (this.users[i].socket === socket.id) {
         this.users[i].gender = data.gender;
         userbase[this.users[i].id].gender = data.gender;
         console.log("resp_changegender: ", { retcode: 0, gender: data.gender });
@@ -124,7 +132,7 @@ class Users {
 
   changeImgNumber(data, socket) {
     for (let i = 0; i < this.users.length; i++) {
-      if (this.users[i].sid === socket.id) {
+      if (this.users[i].socket === socket.id) {
         this.users[i].imgnumber = data.imgnumber;
         userbase[this.users[i].id].imgnumber = data.imgnumber;
         console.log("resp_changeimgnumber: ", {
@@ -152,15 +160,21 @@ class Users {
       return;
     }
     let user = this.getUser(data.id);
-    if (user === undefined) this.users.push(new User(data, socket));
-    else user.sid = socket.id;
-    console.log("resp_login: ", { retcode: 0, sid: socket.id });
-    socket.emit("resp_login", { retcode: 0, sid: socket.id });
+    if (user === undefined) {
+      user = new User(data, socket);
+      this.users.push(user);
+    } else user.socket = socket.id;
+    console.log("resp_login: ", { retcode: 0, sid: user.sid });
+    socket.emit("resp_login", { retcode: 0, sid: user.sid });
   }
 
   getUser(data) {
     for (let i = 0; i < this.users.length; i++) {
-      if (this.users[i].sid === data || this.users[i].id === data)
+      if (
+        this.users[i].socket === data ||
+        this.users[i].id === data ||
+        this.users[i].sid === data
+      )
         return this.users[i];
     }
     return undefined;

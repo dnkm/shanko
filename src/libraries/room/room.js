@@ -40,9 +40,9 @@ class Room {
   }
 
   leave(user, socket, io) {
-    if (this.checkPlayer(user.id)) {
+    if (this.checkPlayer(user.sid)) {
       user.room = undefined;
-      this.players = this.players.filter(p => p.id !== user.id);
+      this.players = this.players.filter(p => p.sid !== user.sid);
       socket.leave(this.roomnumber);
       console.log("resp_room_leave: ", { retcode: 0 });
       socket.emit("resp_room_leave", { retcode: 0 });
@@ -51,9 +51,9 @@ class Room {
     }
   }
 
-  checkPlayer(id) {
+  checkPlayer(sid) {
     for (let i = 0; i < this.players.length; i++)
-      if (id === this.players[i].id) return true;
+      if (sid === this.players[i].sid) return true;
     return false;
   }
 
