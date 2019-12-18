@@ -1,0 +1,38 @@
+{
+  state = [
+    "waiting", "playerphase", "bankerphase", "ended"
+  ]
+}
+
+{
+  "roomnumber": 5040,
+  "players": [
+    {
+      "sid": 5,
+      "nickname": "test",
+      "balance": 10000,
+      "imgnumber": 4,
+      "gender": 0,
+      "isReady": false,
+      "isPlaying": false,
+      "cards": [{ "img":"spade", "num": 'A' }, null, null],
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "bankerIndex": 0,
+  "turnIndex": 0, // next players index
+  "phaseIndex": 0, // server action counter
+  "minimumBank": 30000,
+  "bank": 30000, 
+  "status": 0,
+  "warning": -1, // -1: hasn't reached, 1: 1st round, ... 3: last round  
+  "gamesPlayed": 0,
+  "deck": [{ "img":"spade", "num": 'A' }, ...],
+  "houseProfit": 0.0
+}

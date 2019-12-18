@@ -7,8 +7,11 @@ class Player {
     this.nickname = user.nickname;
     this.balance = user.cash;
     this.imgnumber = user.imgnumber;
-    this.hand = [];
-    this.banker = false;
+    this.gender = user.gender;
+    this.isReady = false;
+    this.isPlaying = false;
+    this.cards = [undefined, undefined, undefined];
+    this.bet = 0;
   }
 }
 

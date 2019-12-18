@@ -1,3 +1,5 @@
+const Logger = require("./logger");
+
 let userbase = {
   david: {
     id: "david",
@@ -101,7 +103,7 @@ class Users {
   profile(socket) {
     let user = this.getUser(socket.id);
     if (user === undefined) {
-      console.log("resp_userinfo: ", "{ retcode: 1 } - user not found");
+      Logger.respLog("resp_userinfo", { retcode: 1 }, "user not found");
       socket.emit("resp_userinfo", { retcode: 1 });
       return;
     }
@@ -113,7 +115,7 @@ class Users {
       win: user.win,
       lose: user.lose
     };
-    console.log("resp_userinfo: ", u);
+    Logger.respLog("resp_userinfo", u, "success");
     socket.emit("resp_userinfo", u);
   }
   changeGender(data, socket) {
@@ -121,12 +123,16 @@ class Users {
       if (this.users[i].socket === socket.id) {
         this.users[i].gender = data.gender;
         userbase[this.users[i].id].gender = data.gender;
-        console.log("resp_changegender: ", { retcode: 0, gender: data.gender });
+        Logger.respLog(
+          "resp_changegender",
+          { retcode: 0, gender: data.gender },
+          "success"
+        );
         socket.emit("resp_changegender", { retcode: 0, gender: data.gender });
         return;
       }
     }
-    console.log("resp_changegender: ", "{ retcode: 1} - sid not found");
+    Logger.respLog("resp_changegender", { retcode: 1 }, "socket id not found");
     socket.emit("resp_changegender", { retcode: 1 });
   }
 
@@ -135,10 +141,14 @@ class Users {
       if (this.users[i].socket === socket.id) {
         this.users[i].imgnumber = data.imgnumber;
         userbase[this.users[i].id].imgnumber = data.imgnumber;
-        console.log("resp_changeimgnumber: ", {
-          retcode: 0,
-          imgnumber: data.imgnumber
-        });
+        Logger.respLog(
+          "resp_changeimgnumber",
+          {
+            retcode: 0,
+            imgnumber: data.imgnumber
+          },
+          "success"
+        );
         socket.emit("resp_changeimgnumber", {
           retcode: 0,
           imgnumber: data.imgnumber
@@ -146,7 +156,11 @@ class Users {
         return;
       }
     }
-    console.log("resp_changeimgnumber: ", "{ retcode: 1} - sid not found");
+    Logger.respLog(
+      "resp_changeimgnumber",
+      { retcode: 1 },
+      "socket id not found"
+    );
     socket.emit("resp_changeimgnumber", { retcode: 1 });
   }
 
@@ -155,7 +169,7 @@ class Users {
       userbase[data.id] === undefined ||
       userbase[data.id].password !== data.password
     ) {
-      console.log("resp_login: ", "{ retcode: 1 } - login unsuccessful");
+      Logger.respLog("resp_login", { retcode: 1 }, "login unsuccessful");
       socket.emit("resp_login", { retcode: 1 });
       return;
     }
@@ -163,8 +177,10 @@ class Users {
     if (user === undefined) {
       user = new User(data, socket);
       this.users.push(user);
-    } else user.socket = socket.id;
-    console.log("resp_login: ", { retcode: 0, sid: user.sid });
+    } else {
+      user.socket = socket.id;
+    }
+    Logger.respLog("resp_login", { retcode: 0, sid: user.sid }, "success");
     socket.emit("resp_login", { retcode: 0, sid: user.sid });
   }
 
