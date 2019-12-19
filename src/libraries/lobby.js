@@ -117,7 +117,23 @@ class Lobby {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
       let room = this.findRoom(user.room);
-      this.rooms[room].ready(user, io);
+      this.rooms[room].ready(user, socket, io);
+      return;
+    }
+    Logger.respLog(
+      "resp_ingame_imready",
+      { retcode: 1 },
+      "user or room not found"
+    );
+    socket.emit("resp_ingame_imready", { retcode: 1 });
+  }
+
+  bet(data, socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].bet(data, user, socket, io);
+      return;
     }
   }
 
@@ -125,8 +141,12 @@ class Lobby {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
       let room = this.findRoom(user.room);
-      Logger.respLog("resp_ingame_state", this.rooms[room], "success");
-      socket.emit("resp_ingame_state", this.rooms[room]);
+      Logger.respLog(
+        "resp_ingame_state",
+        this.rooms[room].filterRoom(),
+        "success"
+      );
+      socket.emit("resp_ingame_state", this.rooms[room].filterRoom());
       return;
     }
     Logger.respLog(
