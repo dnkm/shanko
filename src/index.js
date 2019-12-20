@@ -47,9 +47,8 @@ io.on("connection", socket => {
     );
     socket.emit("resp_rooms", Lobby.getRooms());
   });
-  socket.on("rqst_room_enter", data => Lobby.roomEnter(data, socket, io));
-
-  socket.on("rqst_room_leave", () => Lobby.roomLeave(socket, io));
+  socket.on("rqst_room_enter", data => Lobby.enter(data, socket, io));
+  socket.on("rqst_room_leave", () => Lobby.leave(socket, io));
 
   // room sockets
   socket.on("rqst_ingame_userlist", () => Lobby.getUserList(socket));
@@ -58,7 +57,19 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));
 
   // room server sockets
-  socket.on("srqst_ingame_place_bet", data => Lobby.bet(data, socket, io));
+  socket.on("sresp_ingame_confirm_animation", data =>
+    Lobby.confirm(data, socket, io)
+  );
+  socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
+  socket.on("sresp_ingame_player_action", data =>
+    Lobby.playerAction(data, socket, io)
+  );
+  socket.on("sresp_ingame_banker_action", data =>
+    Lobby.bankerAction(data, socket, io)
+  );
+  socket.on("sresp_ingame_three_card", data =>
+    Lobby.threeCard(data, socket, io)
+  );
 });
 
 http.listen(8080, () => console.log("server started"));

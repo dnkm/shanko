@@ -32,7 +32,7 @@ class Lobby {
     return rooms;
   }
 
-  roomEnter(data, socket, io) {
+  enter(data, socket, io) {
     let room = this.findRoom(data.roomnumber);
     if (room === -1) {
       Logger.respLog("resp_room_enter", { retcode: 2 }, "room not found");
@@ -54,7 +54,7 @@ class Lobby {
     socket.emit("resp_room_enter", { retcode: 2 });
   }
 
-  roomLeave(socket, io) {
+  leave(socket, io) {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
       let room = this.findRoom(user.room);
@@ -134,6 +134,22 @@ class Lobby {
       let room = this.findRoom(user.room);
       this.rooms[room].bet(data, user, socket, io);
       return;
+    }
+  }
+
+  confirm(data, socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].confirm(data, user, io);
+    }
+  }
+
+  playerAction(data, socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].playerAction(data, user, socket, io);
     }
   }
 

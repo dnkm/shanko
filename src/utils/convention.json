@@ -1,9 +1,4 @@
-{
-  state = [
-    "waiting", "playerphase", "bankerphase", "ended"
-  ]
-}
-
+// in game state
 {
   "roomnumber": 5040,
   "players": [
@@ -11,28 +6,57 @@
       "sid": 5,
       "nickname": "test",
       "balance": 10000,
+      "bet": 5000
       "imgnumber": 4,
       "gender": 0,
       "isReady": false,
       "isPlaying": false,
-      "cards": [{ "img":"spade", "num": 'A' }, null, null],
+      "cards": [{ "img":"spade", "num": 'A' }],
+      "win": 0,
+      "loss": 0,
+      "seatIndex": 1,
     },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
+    {
+      "sid": 6,
+      "nickname": "test1",
+      "balance": 10000,
+      "bet": 5000
+      "imgnumber": 4,
+      "gender": 0,
+      "isReady": false,
+      "isPlaying": false,
+      "cards": [{"img": "hidden" }, {"img": "hidden" }],
+      "win": 0,
+      "loss": 0,
+      "seatIndex": 2
+    },
   ],
   "bankerIndex": 0,
-  "turnIndex": 0, // next players index
-  "phaseIndex": 0, // server action counter
+  "phaseIndex": 0,
   "minimumBank": 30000,
+  "minBet": 1000,
+  "maxBet":2000,
   "bank": 30000, 
-  "status": 0,
-  "warning": -1, // -1: hasn't reached, 1: 1st round, ... 3: last round  
-  "gamesPlayed": 0,
-  "deck": [{ "img":"spade", "num": 'A' }, ...],
-  "houseProfit": 0.0
+  "warning": -1
 }
+
+// lobby room
+{
+  "retcode": 0,
+  "roomlist": [
+    {
+      "roomnumber": 1001,
+      "players": 5,
+      "bank": 3000,
+      "status": "player phase"
+    },
+    {
+      "roomnumber": 1002,
+      "players": 1,
+      "bank": 3000,
+      "status": "waiting"
+    },
+    ...
+  ]
+}
+

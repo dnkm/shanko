@@ -164,6 +164,11 @@ class Users {
     socket.emit("resp_changeimgnumber", { retcode: 1 });
   }
 
+  changeCash(user, amount) {
+    userbase[user.id].cash += amount;
+    user.cash += amount;
+  }
+
   login(data, socket) {
     if (
       userbase[data.id] === undefined ||
