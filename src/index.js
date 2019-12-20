@@ -58,7 +58,8 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));
 
   // room server sockets
-  socket.on("srqst_ingame_place_bet", data => Lobby.bet(data, socket, io));
+  socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
+  socket.on("sresp_ingame_deal", () => Lobby.confirm("deal", socket, io));
 });
 
 http.listen(8080, () => console.log("server started"));

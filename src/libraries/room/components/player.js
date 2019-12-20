@@ -12,7 +12,8 @@ class Player {
     this.isReady = false;
     this.isPlaying = false;
     this.cards = [];
-    this.bet = -1;
+    this.bet = 0;
+    this.lastConfirmedAnimation = "";
   }
 }
 

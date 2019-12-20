@@ -1,4 +1,5 @@
 const config = require("../../utils/config");
+const Users = require("./../user");
 const Player = require("./components/player");
 const Card = require("./components/card");
 const Logger = require("../logger");
@@ -21,12 +22,14 @@ const FACES = [
 const VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10];
 const SUITS = ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"];
 const PHASES = [
-  "waiting",
-  "shuffle/deal",
-  "player phase",
-  "banker phase",
-  "ended"
+  { phase: "waiting", anims: ["ready"] },
+  { phase: "betting", anims: ["bet"] },
+  { phase: "shuffle/deal", anims: ["deal"] },
+  { phase: "player phase", anims: ["draw", "pass"] },
+  { phase: "banker phase", anims: ["reveal", "draw", "pass"] },
+  { phase: "results", anims: ["confirm"] }
 ];
+const HIDDEN = { img: "hidden" };
 
 function newDeck() {
   return new Array(52)
@@ -36,20 +39,25 @@ function newDeck() {
 
 class Room {
   constructor(room, index, rank) {
+    // lobby
     this.roomnumber = room;
     this.players = new Array(config.MAXPLAYERS).fill(undefined);
-    this.bankerIndex = 0;
-    this.turnIndex = 0;
     this.phaseIndex = 0;
     this.minimumbank =
       index >= config[rank].ROOMS_1 ? config[rank].BANK_2 : config[rank].BANK_1;
+
+    // room
     this.bank = this.minimumbank;
+    this.bankerIndex = 0;
     this.warning = -1;
+
+    // internal
+    this.revealed = [];
     this.gamesPlayed = 0;
     this.deck = newDeck();
-    this.shuffle();
     this.houseProfit = 0.0;
     this.bankerQueue = [];
+    this.nextPhase = this.deal;
   }
 
   enter(user, socket, io) {
@@ -124,16 +132,15 @@ class Room {
       this.players.forEach(p => {
         if (p && p.sid === user.sid) p.isReady = true;
       });
-
-      Logger.respLog("resp_ingame_imready", { retcode: 0 }, "success");
-      socket.emit("resp_ingame_imready", { retcode: 0 });
       Logger.respLog(
-        "resp_room_update",
-        this.filterRoom(),
-        user.sid + " ready"
+        "resp_ingame_imready",
+        { retcode: 0 },
+        user.sid + " - success"
       );
-      io.to(this.roomnumber).emit("resp_ingame_state", this.filterRoom());
-      if (this.readyCheck()) {
+      socket.emit("resp_ingame_imready", { retcode: 0 });
+      this.piggyback(io);
+      if (this.check("isReady", false)) {
+        this.phaseIndex = 1;
         Logger.respLog(
           "srqst_ingame_gamestart",
           { ts: 1923808 },
@@ -151,18 +158,15 @@ class Room {
     socket.emit("resp_ingame_imready", { retcode: 1 });
   }
 
-  bet(data, user, socket, io) {
-    if (this.checkPlayer()) {
+  bet(data, user, io) {
+    if (this.phaseIndex !== 1) return;
+    if (this.checkPlayer(user.sid)) {
       for (let i = 0; i < this.players.length; i++) {
         if (this.players[i] && this.players[i].sid === user.sid)
           this.players[i].bet = data.betAmount;
       }
-      let players = this.players
-        .filter(p => p)
-        .map(p => {
-          return { sid: p.sid, cards: p.cards };
-        });
-      Logger.log(
+      let players = this.players.filter(p => p).map(p => this.filterPlayer(p));
+      Logger.respLog(
         "srqst_ingame_place_bet",
         {
           sid: user.sid,
@@ -178,24 +182,66 @@ class Room {
         ts: 1321432,
         players
       });
-      if (this.actionCheck("bet")) {
+      this.piggyback(io);
+      if (this.check("bet", 0)) {
+        this.shuffle(io);
+        this.phaseIndex++;
+        this.nextPhase(io);
       }
       return;
     }
   }
 
-  actionCheck(action) {
+  deal(io) {
+    this.players.forEach(p => {
+      if (p) {
+        p.cards.push(this.deck.pop());
+        p.cards.push(this.deck.pop());
+        let socket = Users.getUser(p.sid).socket;
+        io.to(socket).emit("srqst_ingame_deal", {
+          cards: [p.cards[0], p.cards[1]]
+        });
+      }
+    });
+    this.nextPhase = this.playerPhase;
+  }
+
+  playerPhase(io) {
+    io.to(this.roomnumber).emit("srqst_ingame_player_action");
+    this.piggyback(io);
+  }
+
+  confirm(anim, user, io) {
+    if (!PHASES[this.phaseIndex].anims.includes(anim)) return;
+    this.players.forEach(p => {
+      if (p && p.sid === user.sid) p.lastConfirmedAnimation = anim;
+    });
+    if (this.sync("lastConfirmedAnimation", anim)) {
+      this.nextPhase(io);
+    }
+  }
+
+  check(prop, unchanged) {
     for (let i = 0; i < this.players.length; i++) {
-      if (this.players[i] && this.players[i][action] === -1) return false;
+      if (this.players[i] && this.players[i][prop] === unchanged) return false;
     }
     return true;
   }
 
-  readyCheck() {
+  sync(prop, changed) {
     for (let i = 0; i < this.players.length; i++) {
-      if (this.players[i] && !this.players[i].isReady) return false;
+      if (this.players[i] && this.players[i][prop] !== changed) return false;
     }
     return true;
+  }
+
+  piggyback(io) {
+    // Logger.respLog(
+    //   "resp_ingame_state",
+    //   this.filterRoom(),
+    //   "piggback - " + PHASES[this.phaseIndex].phase
+    // );
+    io.to(this.roomnumber).emit("resp_ingame_state", this.filterRoom());
   }
 
   checkPlayer(sid) {
@@ -211,14 +257,24 @@ class Room {
       roomnumber: this.roomnumber,
       players: cnt,
       bank: this.minimumbank,
-      status: PHASES[this.phaseIndex]
+      status:
+        cnt === this.players.length ? "full" : PHASES[this.phaseIndex].phase
     };
   }
 
   filterRoom() {
     return {
       roomnumber: this.roomnumber,
-      players: this.players.filter(p => p),
+      players: this.players
+        .filter(p => p)
+        .map(p => {
+          let player = {
+            ...p,
+            cards: this.hiddenCards(p)
+          };
+          delete player["lastConfirmedAnimation"];
+          return player;
+        }),
       bankerIndex: this.bankerIndex,
       turnIndex: this.turnIndex,
       phaseIndex: this.phaseIndex,
@@ -230,7 +286,22 @@ class Room {
     };
   }
 
-  shuffle() {
+  filterPlayer(player) {
+    return {
+      sid: player.sid,
+      cards: this.hiddenCards(player)
+    };
+  }
+
+  hiddenCards(player) {
+    return this.revealed.includes(player.sid)
+      ? player.cards
+      : new Array(player.cards.length).fill(0).map(c => {
+          return { ...HIDDEN };
+        });
+  }
+
+  shuffle(io) {
     for (let i = 0; i < 1000; i++) {
       let s1 = Math.floor(Math.random() * 52);
       let s2 = Math.floor(Math.random() * 52);
