@@ -141,7 +141,7 @@ class Lobby {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
       let room = this.findRoom(user.room);
-      this.rooms[room].bet(data, user, socket, io);
+      this.rooms[room].bet(data, user, io);
       return;
     }
   }

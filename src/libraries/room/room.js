@@ -300,7 +300,6 @@ class Room {
   }
 
   // piggybacks
-
   piggyback(io) {
     // Logger.respLog(
     //   "resp_ingame_state",
@@ -427,7 +426,7 @@ class Room {
       betAmount: player.bet
     };
   }
-
+  
   filterPlayer(player) {
     return {
       sid: player.sid,
