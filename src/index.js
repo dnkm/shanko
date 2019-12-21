@@ -64,7 +64,7 @@ io.on("connection", socket => {
     Lobby.playerAction(data, socket, io)
   );
   socket.on("sresp_ingame_three_card", data =>
-    Lobby.threeCard(data, socket, io)
+    Lobby.bankerAction(data.threecard ? "threecard" : "pass", socket, io)
   );
   socket.on("sresp_ingame_banker_action", data =>
     Lobby.bankerAction(data, socket, io)

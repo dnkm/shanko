@@ -39,7 +39,7 @@ function newDeck() {
 }
 
 class Room {
-  constructor(room, index, rank, io) {
+  constructor(room, index, rank) {
     // lobby
     this.roomnumber = room;
     this.players = new Array(config.MAXPLAYERS).fill(undefined);
@@ -60,7 +60,7 @@ class Room {
     this.bankerQueue = [];
     this.deposit = true;
     this.actions = [];
-    this.nextPhase = this.initializeBank;
+    this.nextPhase = this.betting;
   }
 
   enter(user, socket, io) {
@@ -142,7 +142,7 @@ class Room {
     this.players[p].balance -= this.minimumbank;
     this.bank += this.minimumbank;
     Users.changeCash(user, -this.minimumbank);
-    this.betting(io);
+    this.nextPhase(io);
   }
 
   readyCheck() {
@@ -165,9 +165,10 @@ class Room {
     let p = this.findPlayer(user.sid);
     if (this.phaseIndex !== 1 || p === -1) return;
     this.players[p].bet = data.betAmount;
+    this.players[p].balance -= data.betAmount;
     this.bank += data.betAmount;
     Users.changeCash(user, -data.betAmount);
-    this.actions.push(user.sid);
+    this.actions.push({ sid: user.sid });
     this.piggyback(
       "srqst_ingame_place_bet",
       {
@@ -176,7 +177,8 @@ class Room {
       },
       io
     );
-    if (this.actionCheck()) {
+    if (this.checkActions()) {
+      this.actions = [];
       this.deal(io);
     }
   }
@@ -203,23 +205,60 @@ class Room {
 
   playerAction(data, user, socket, io) {
     let p = this.findPlayer(user.sid);
-    if (this.phaseIndex !== 4 || p === -1) return;
+    if (this.phaseIndex !== 3 || p === -1) return;
+    // exclude banker
+    if (data.action === "draw") this.players[p].cards.push(this.deck.pop());
     this.actions.push({ sid: user.sid, action: data.action });
+    if (this.checkActions()) {
+      this.piggyback(
+        "srqst_ingame_player_action_update",
+        {
+          actions: this.actions
+        },
+        io
+      );
+      this.actions = [];
+    }
   }
 
-  actionCheck() {
+  threeCard(io) {
+    let socket = Users.getUser(this.bankerIndex).socket;
+    io.to(socket).emit("srqst_ingame_three_card");
+    this.phaseIndex = 4;
+    this.nextPhase = this.bankerAction;
+  }
+
+  bankerAction(data, user, socket, io) {
+    if (data === "threecard") {
+    }
+    if (data === "draw") {
+    }
+  }
+
+  checkActions() {
+    // exclude banker
     for (let i = 0; i < this.players.length; i++)
-      if (this.players[i] && !this.actions.includes(this.players[i].sid))
-        return false;
-    this.actions = [];
+      if (this.players[i] && !this.checkAction(this.players[i])) return false;
     return true;
   }
 
+  checkBankerAction() {
+    let p = this.findPlayer(this.bankerIndex);
+    if (p !== -1) {
+    }
+  }
+
+  checkAction(player) {
+    for (let i = 0; i < this.actions.length; i++)
+      if (this.actions[i].sid === player.sid) return true;
+    return false;
+  }
+
   confirm(data, user, io) {
-    if (!PHASES[this.phaseIndex].anims.includes(data.animation)) return;
+    if (!PHASES[this.phaseIndex].anims.includes(data)) return;
     for (let i = 0; i < this.players.length; i++) {
       if (this.players[i] && user.sid === this.players[i].sid)
-        this.players[i].lastConfirmedAnimation = data.animation;
+        this.players[i].lastConfirmedAnimation = data;
     }
     if (this.sync()) this.nextPhase(io);
   }
