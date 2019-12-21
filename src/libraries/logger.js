@@ -1,6 +1,6 @@
 class Logger {
   reqLog(socket) {
-    if (socket[1].length !== 0) {
+    if (socket[1]) {
       console.log(
         new Date(new Date().toUTCString().substr(0, 25)),
         socket[0],
