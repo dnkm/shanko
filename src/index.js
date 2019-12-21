@@ -54,13 +54,10 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_userlist", () => Lobby.getUserList(socket));
   socket.on("rqst_ingame_userinfo", data => Lobby.getUserInfo(data, socket));
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));
-  socket.on("rqst_ingame_start", () => Lobby.start(socket, io));
   socket.on("rqst_ingame_imready", () => Lobby.ready(socket, io));
+  socket.on("rqst_ingame_start", () => Lobby.start(socket, io));
 
   // room server sockets
-  socket.on("sresp_ingame_confirm_animation", data =>
-    Lobby.confirm(data, socket, io)
-  );
   socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
   socket.on("sresp_ingame_player_action", data =>
     Lobby.playerAction(data, socket, io)

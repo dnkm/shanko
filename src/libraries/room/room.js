@@ -25,7 +25,6 @@ const PHASES = [
   { phase: "waiting", anims: ["ready"] },
   { phase: "betting", anims: ["bet"] },
   { phase: "deal", anims: ["deal"] },
-  { phase: "auto-shan", anims: ["autoshan"] },
   { phase: "player phase", anims: ["draw", "pass"] },
   { phase: "three card", anims: ["three card"] },
   { phase: "banker phase", anims: ["draw", "pass"] },
@@ -59,12 +58,13 @@ class Room {
     this.deck = newDeck();
     this.houseProfit = 0.0;
     this.bankerQueue = [];
+    this.deposit = true;
     this.actions = [];
     this.nextPhase = this.initializeBank;
   }
 
   enter(user, socket, io) {
-    if (!this.checkPlayer(user.id)) {
+    if (this.findPlayer(user.id) === -1) {
       let seat = this.findSeat();
       this.players[seat] = new Player(socket.id, this.findSeat());
       if (this.bankerIndex === -1) this.bankerIndex = user.sid;
@@ -72,24 +72,22 @@ class Room {
       if (this.players.length === 1) {
         this.players[0].banker = true;
       }
+      io.to(this.roomnumber).emit("srqst_ingame_newuser", this.players[seat]);
       socket.join(this.roomnumber);
     }
     Logger.respLog(
       "resp_room_enter",
       {
         retcode: 0,
-        roomnumber: this.roomnumber
+        roomnumber: this.roomnumber,
+        players: this.filterRoomState()
       },
       "success"
     );
     socket.emit("resp_room_enter", {
       retcode: 0,
-      roomnumber: this.roomnumber
-    });
-
-    this.piggyback(io);
-    io.to(this.roomnumber).emit("rqst_ingame_imready", {
-      ts: new Date().getTime()
+      roomnumber: this.roomnumber,
+      players: this.filterRoomState()
     });
   }
 
@@ -101,7 +99,7 @@ class Room {
   }
 
   leave(user, socket, io) {
-    if (this.checkPlayer(user.sid)) {
+    if (this.findPlayer(user.sid) === -1) {
       user.room = undefined;
       this.bankerQueue.filter(b => b !== user.sid);
       this.players = this.players.map(p =>
@@ -122,50 +120,29 @@ class Room {
         roomnumber: this.roomnumber,
         sid: user.sid
       });
-      this.piggyback(io);
     }
-  }
-
-  start(user, socket, io) {
-    if (
-      this.phaseIndex !== 0 ||
-      !this.checkPlayer(user.sid) ||
-      this.bankerIndex !== user.sid
-    )
-      return;
-    this.nextPhase = this.betting;
-    for (let i = 0; i < this.players.length; i++) {
-      if (this.players[i] && this.players[i].sid === this.bankerIndex) {
-        this.bank += this.minimumbank;
-        this.players[i].balance -= this.minimumbank;
-      }
-    }
-    Logger.respLog(
-      "resp_ingame_imready",
-      {
-        sid: user.sid,
-        deposit: this.minimumbank,
-        ts: new Date().getTime()
-      },
-      this.roomnumber + " - start"
-    );
-    io.to(this.roomnumber).emit("resp_ingame_imready", {
-      sid: user.sid,
-      deposit: this.minimumbank,
-      ts: new Date().getTime()
-    });
   }
 
   ready(user, socket, io) {
-    if (this.phaseIndex !== 0 || !this.checkPlayer(user.sid)) return;
-    this.players.forEach(p => {
-      if (p && p.sid === user.sid) p.isReady = true;
-    });
+    let p = this.findPlayer(user.sid);
+    if (this.phaseIndex !== 0 || p === -1) return;
+    this.players[p].isReady = true;
+    this.piggyback("resp_ingame_imready", { retcode: 0 }, io);
+  }
 
-    if (this.readyCheck()) {
-      this.piggyback(io);
-      this.nextPhase(io);
-    }
+  start(user, socket, io) {
+    let p = this.findPlayer(user.sid);
+    if (
+      this.phaseIndex !== 0 ||
+      p === -1 ||
+      this.bankerIndex !== this.players[p].sid ||
+      !this.readyCheck()
+    )
+      return;
+    this.players[p].balance -= this.minimumbank;
+    this.bank += this.minimumbank;
+    Users.changeCash(user, -this.minimumbank);
+    this.betting(io);
   }
 
   readyCheck() {
@@ -177,97 +154,56 @@ class Room {
   betting(io) {
     this.phaseIndex = 1;
     this.nextPhase = this.deal;
-    io.to(this.roomnumber).emit("srqst_ingame_betstart", {
-      ts: new Date().getTime()
-    });
+    this.piggyback(
+      "srqst_ingame_gamestart",
+      { bankerDeposit: this.deposit },
+      io
+    );
   }
 
   bet(data, user, socket, io) {
-    if (this.phaseIndex !== 1 || !this.checkPlayer(user.sid)) return;
-    for (let i = 0; i < this.players.length; i++)
-      if (this.players[i] && this.players[i].sid === user.sid) {
-        this.players[i].bet = data.betAmount;
-        this.bank += data.betAmount;
-        Users.changeCash(user, -data.betAmount);
-        this.actions.push(user.sid);
-        io.to(this.roomnumber).emit("srqst_ingame_place_bet", {
-          sid: user.sid,
-          betAmount: data.betAmount,
-          ts: new Date().getTime(),
-          bets: this.piggybackBets()
-        });
-      }
+    let p = this.findPlayer(user.sid);
+    if (this.phaseIndex !== 1 || p === -1) return;
+    this.players[p].bet = data.betAmount;
+    this.bank += data.betAmount;
+    Users.changeCash(user, -data.betAmount);
+    this.actions.push(user.sid);
+    this.piggyback(
+      "srqst_ingame_place_bet",
+      {
+        sid: user.sid,
+        betAmount: data.betAmount
+      },
+      io
+    );
     if (this.actionCheck()) {
-      io.to(this.roomnumber).emit("srqst_ingame_awaiting_animation", {
-        animation: "bet",
-        ts: new Date().getTime()
-      });
+      this.deal(io);
     }
   }
 
   deal(io) {
-    this.piggyback(io);
     this.phaseIndex = 2;
-    this.nextPhase = this.autoShan;
+    this.nextPhase = this.playerActions;
     this.shuffle();
     this.players.forEach(p => {
       if (p) {
         p.cards.push(this.deck.pop());
         p.cards.push(this.deck.pop());
-        let socket = Users.getUser(p.sid).socket;
-        io.to(socket).emit("srqst_ingame_deal", {
-          cards: p.cards
-        });
+        if (this.cardsValue(p.cards).total >= 8) this.revealed.push(p.sid);
       }
     });
-  }
-
-  autoShan(io) {
-    this.piggyback(io);
-    this.phaseIndex = 3;
-    this.nextPhase = this.playerActions;
-    let autoshans = [];
-    let banker = undefined;
-    this.players.forEach(p => {
-      if (p) {
-        let cards = this.cardsValue(p.cards);
-        if (cards.total >= 8) {
-          if (p.sid !== this.bankerIndex)
-            autoshans.push({
-              sid: p.sid,
-              cards,
-              result: true
-            });
-          else banker = cards;
-        }
-      }
-    });
-    if (banker) {
-      this.nextPhase = this.results;
-    }
-    if (autoshans.length > 0)
-      io.to(this.roomnumber).emit("srqst_ingame_autoshan", {
-        results: autoshans.map(a => {
-          return {
-            sid: a.sid,
-            result: a.result
-          };
-        })
-      });
-
-    this.nextPhase(io);
+    this.piggyback("srqst_ingame_deal", {}, io);
   }
 
   playerActions(io) {
-    this.phaseIndex = 4;
+    this.phaseIndex = 3;
     this.nextPhase = this.threeCard;
-    io.to(this.roomnumber).emit("srqst_ingame_player_action", {
-      ts: new Date().getTime()
-    });
+    this.piggyback("srqst_ingame_player_action", {}, io);
   }
 
   playerAction(data, user, socket, io) {
-    if (this.phaseIndex !== 4 || this.checkPlayer(user.sid)) return;
+    let p = this.findPlayer(user.sid);
+    if (this.phaseIndex !== 4 || p === -1) return;
     this.actions.push({ sid: user.sid, action: data.action });
   }
 
@@ -285,42 +221,26 @@ class Room {
       if (this.players[i] && user.sid === this.players[i].sid)
         this.players[i].lastConfirmedAnimation = data.animation;
     }
-    if (this.sync(data)) this.nextPhase(io);
+    if (this.sync()) this.nextPhase(io);
   }
 
-  sync(data) {
+  sync() {
     for (let i = 0; i < this.players.length; i++) {
       if (
         this.players[i] &&
-        this.players[i].lastConfirmedAnimation !== data.animation
+        !PHASES[this.phaseIndex].anims.includes(
+          this.players[i].lastConfirmedAnimation
+        )
       )
         return false;
     }
     return true;
   }
 
-  // piggybacks
-  piggyback(io) {
-    // Logger.respLog(
-    //   "resp_ingame_state",
-    //   this.filterRoom(),
-    //   "piggback - " + PHASES[this.phaseIndex].phase
-    // );
-    io.to(this.roomnumber).emit("resp_ingame_state", this.filterRoom());
-  }
-
-  piggybackBets() {
-    return this.players.filter(p => p).map(p => this.filterBet(p));
-  }
-
-  piggybackPlayers() {
-    return this.players.filter(p => p).map(p => this.filterPlayer(p));
-  }
-
-  checkPlayer(sid) {
+  findPlayer(sid) {
     for (let i = 0; i < this.players.length; i++)
-      if (this.players[i] && sid === this.players[i].sid) return true;
-    return false;
+      if (this.players[i] && sid === this.players[i].sid) return i;
+    return -1;
   }
 
   // game
@@ -382,6 +302,25 @@ class Room {
     };
   }
 
+  // piggybacks
+
+  piggyback(protocol, content, io) {
+    Logger.respLog(
+      protocol,
+      { ...content, players: this.filterRoom(undefined) },
+      "phase - " + PHASES[this.phaseIndex].phase
+    );
+    this.players.forEach(p => {
+      if (p) {
+        let socket = Users.getUser(p.sid).socket;
+        io.to(socket).emit(protocol, {
+          ...content,
+          players: this.filterRoom(p)
+        });
+      }
+    });
+  }
+
   // filter
 
   filterLobby() {
@@ -392,11 +331,45 @@ class Room {
       status:
         this.playerCnt() === this.players.length
           ? "full"
-          : PHASES[this.phaseIndex].phase
+          : this.bankerIndex === -1
+          ? "not started"
+          : this.phaseIndex === 0
+          ? "waiting"
+          : "playing"
     };
   }
 
-  filterRoom() {
+  filterRoom(player) {
+    return {
+      ts: new Date().getTime(),
+      phaseIndex: this.phaseIndex,
+      warning: this.warning,
+      players: this.players
+        .filter(p => p)
+        .map(p => this.filterPlayer(player, p))
+    };
+  }
+
+  filterPlayer(player, other) {
+    return {
+      sid: other.sid,
+      cards:
+        player && player.sid === other.sid
+          ? player.cards
+          : this.hiddenCards(other),
+      betAmount: other.betAmount
+    };
+  }
+
+  hiddenCards(player) {
+    return this.revealed.includes(player.sid)
+      ? player.cards
+      : new Array(player.cards.length).fill(0).map(c => {
+          return { ...HIDDEN };
+        });
+  }
+
+  filterRoomState() {
     return {
       roomnumber: this.roomnumber,
       players: this.players
@@ -418,28 +391,6 @@ class Room {
       warning: this.warning,
       deck: this.deck.length
     };
-  }
-
-  filterBet(player) {
-    return {
-      sid: player.sid,
-      betAmount: player.bet
-    };
-  }
-  
-  filterPlayer(player) {
-    return {
-      sid: player.sid,
-      cards: this.hiddenCards(player)
-    };
-  }
-
-  hiddenCards(player) {
-    return this.revealed.includes(player.sid)
-      ? player.cards
-      : new Array(player.cards.length).fill(0).map(c => {
-          return { ...HIDDEN };
-        });
   }
 
   // misc.
