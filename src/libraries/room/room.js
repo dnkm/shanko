@@ -87,7 +87,7 @@ class Room {
     socket.emit("resp_room_enter", {
       retcode: 0,
       roomnumber: this.roomnumber,
-      players: this.filterRoomState()
+      ...this.filterRoomState()
     });
   }
 
