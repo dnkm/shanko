@@ -162,6 +162,14 @@ class Lobby {
     }
   }
 
+  bankerAction(data, socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].bankerAction(data, user, socket, io);
+    }
+  }
+
   getState(socket) {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
@@ -171,7 +179,7 @@ class Lobby {
         this.rooms[room].filterRoom(),
         "success"
       );
-      socket.emit("resp_ingame_state", this.rooms[room].filterRoom());
+      socket.emit("resp_ingame_state", this.rooms[room].filterRoomState());
       return;
     }
     Logger.respLog(
