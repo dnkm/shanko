@@ -64,7 +64,7 @@ class Room {
   }
 
   enter(user, socket, io) {
-    if (this.findPlayer(user.id) === -1) {
+    if (this.findPlayer(user.sid) === -1) {
       let seat = this.findSeat();
       this.players[seat] = new Player(socket.id, this.findSeat());
       if (this.bankerIndex === -1) this.bankerIndex = user.sid;
@@ -80,14 +80,14 @@ class Room {
       {
         retcode: 0,
         roomnumber: this.roomnumber,
-        players: this.filterRoomState()
+        ...this.filterRoomState()
       },
       "success"
     );
     socket.emit("resp_room_enter", {
       retcode: 0,
       roomnumber: this.roomnumber,
-      players: this.filterRoomState()
+      ...this.filterRoomState()
     });
   }
 
@@ -99,7 +99,7 @@ class Room {
   }
 
   leave(user, socket, io) {
-    if (this.findPlayer(user.sid) === -1) {
+    if (this.findPlayer(user.sid) !== -1) {
       user.room = undefined;
       this.bankerQueue.filter(b => b !== user.sid);
       this.players = this.players.map(p =>
