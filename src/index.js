@@ -63,12 +63,19 @@ io.on("connection", socket => {
   socket.on("sresp_ingame_player_action", data =>
     Lobby.playerAction(data, socket, io)
   );
+  socket.on("sresp_ingame_player_action_update", () =>
+    Lobby.confirm("player action", socket, io)
+  );
   socket.on("sresp_ingame_three_card", data =>
     Lobby.bankerAction(data.threecard ? "threecard" : "pass", socket, io)
+  );
+  socket.on("sresp_ingame_three_cards", () =>
+    Lobby.confirm("three card", socket, io)
   );
   socket.on("sresp_ingame_banker_action", data =>
     Lobby.bankerAction(data, socket, io)
   );
+  socket.on("sresp_ingame_result", () => Lobby.confirm("results", socket, io));
 });
 
 http.listen(8080, () => console.log("server started"));
