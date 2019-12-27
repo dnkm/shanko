@@ -43,6 +43,7 @@ class Room {
     // lobby
     this.roomnumber = room;
     this.players = new Array(config.MAXPLAYERS).fill(undefined);
+    this.spectators = [];
     this.phaseIndex = 0;
     this.minimumbank =
       index >= config[rank].ROOMS_1 ? config[rank].BANK_2 : config[rank].BANK_1;
@@ -60,89 +61,75 @@ class Room {
     this.bankerQueue = [];
     this.deposit = true;
     this.actions = [];
-    this.nextPhase = this.betting;
+    this.nextPhase = this.start;
   }
 
   enter(user, socket, io) {
-    if (this.findPlayer(user.sid) === -1) {
-      let seat = this.findSeat();
-      this.players[seat] = new Player(socket.id, this.findSeat());
-      if (this.bankerIndex === -1) this.bankerIndex = user.sid;
-      this.bankerQueue.push(user.sid);
-      if (this.players.length === 1) {
-        this.players[0].banker = true;
-      }
-      io.to(this.roomnumber).emit("srqst_ingame_newuser", this.players[seat]);
-      socket.join(this.roomnumber);
-    }
+    if (!this.spectators.includes(user.sid)) this.spectators.push(user.sid);
     Logger.respLog(
       "resp_room_enter",
-      {
-        retcode: 0,
-        roomnumber: this.roomnumber,
-        ...this.filterRoomState()
-      },
+      { retcode: 0, ...this.filterRoomState() },
       "success"
     );
-    socket.emit("resp_room_enter", {
-      retcode: 0,
-      roomnumber: this.roomnumber,
-      ...this.filterRoomState()
-    });
-  }
-
-  findSeat() {
-    for (let i = 0; i < this.players.length; i++) {
-      if (this.players[i] === undefined) return i;
-    }
-    return -1;
-  }
-
-  leave(user, socket, io) {
-    if (this.findPlayer(user.sid) !== -1) {
-      user.room = undefined;
-      this.bankerQueue.filter(b => b !== user.sid);
-      this.players = this.players.map(p =>
-        p ? (p.sid === user.sid ? undefined : p) : undefined
-      );
-      socket.leave(this.roomnumber);
-      Logger.respLog(
-        "resp_room_leave",
-        {
-          retcode: 0,
-          roomnumber: this.roomnumber,
-          sid: user.sid
-        },
-        "success"
-      );
-      socket.emit("resp_room_leave", {
-        retcode: 0,
-        roomnumber: this.roomnumber,
-        sid: user.sid
-      });
-    }
+    socket.emit("resp_room_enter", { retcode: 0, ...this.filterRoomState() });
   }
 
   ready(user, socket, io) {
-    let p = this.findPlayer(user.sid);
-    if (this.phaseIndex !== 0 || p === -1) return;
-    this.players[p].isReady = true;
-    this.piggyback("resp_ingame_imready", { retcode: 0 }, io);
+    if (!this.spectators.includes(user.sid)) return;
+    Logger.respLog("resp_ingame_imready", { retcode: 0 }, "success");
+    socket.emit("resp_ingame_imready", { retcode: 0 });
+    socket.join(this.roomnumber);
   }
 
-  start(user, socket, io) {
-    let p = this.findPlayer(user.sid);
-    if (
-      this.phaseIndex !== 0 ||
-      p === -1 ||
-      this.playerCnt < 2 ||
-      this.bankerIndex !== user.sid ||
-      !this.readyCheck()
-    )
+  getSeated(data, user, socket, io) {
+    if (this.findPlayer(user.sid) !== -1) {
+      socket.emit("resp_ingame_sit", { retcode: 2 });
       return;
+    }
+    if (this.players[data.seatIndex] !== undefined) {
+      socket.emit("resp_ingame_sit", { retcode: 1 });
+      return;
+    }
+    this.spectators.filter(s => s !== user.sid);
+    this.players[data.seatIndex] = new Player(socket.id, data.seatIndex);
+    if (this.bankerIndex === -1) {
+      this.bankerIndex = user.sid;
+      this.players[data.seatIndex].banker = true;
+    } else this.bankerQueue.push(user.sid);
+    io.to(this.roomnumber).emit("srqst_ingame_newuser", {
+      ...this.players[data.seatIndex]
+    });
+    socket.emit("resp_ingame_sit", { retcode: 0 });
+    if (this.playerCnt() === 3) this.nextPhase(io);
+  }
+
+  leave(user, socket, io) {
+    if (this.spectators.includes(user.sid)) {
+      this.spectators.filter(s => s.sid !== user.sid);
+      socket.emit("resp_room_leave", { retcode: 0 });
+      return;
+    }
+    let p = this.findPlayer(user.sid);
+    if (p !== -1) {
+      if (user.sid === this.bankerIndex) this.nextBanker();
+      user.room = undefined;
+      this.bankerQueue.filter(b => b !== user.sid);
+      this.players[p] = undefined;
+      socket.leave(this.roomnumber);
+      Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
+      socket.emit("resp_room_leave", { retcode: 0 });
+    }
+  }
+
+  start(io) {
+    this.nextPhase = this.betting;
+    let p = this.findPlayer(this.bankerIndex);
     this.players[p].balance -= this.minimumbank;
     this.bank += this.minimumbank;
-    Users.changeCash(user, -this.minimumbank);
+    this.players.forEach(p => {
+      if (p) p.isActive = true;
+    });
+    Users.changeCash(Users.getUser(this.bankerIndex), -this.minimumbank);
     this.nextPhase(io);
   }
 
@@ -155,6 +142,7 @@ class Room {
   betting(io) {
     this.phaseIndex = 1;
     this.nextPhase = this.deal;
+    this.deposit = false;
     this.piggyback(
       "srqst_ingame_gamestart",
       { bankerDeposit: this.deposit },
@@ -168,12 +156,13 @@ class Room {
       return;
     this.players[p].bet = data.betAmount;
     this.bank += data.betAmount;
-    this.actions.push({ sid: user.sid });
+    this.actions.push({ sid: user.sid, betAmount: data.betAmount });
     this.piggyback(
       "srqst_ingame_place_bet",
       {
         sid: user.sid,
-        betAmount: data.betAmount
+        betAmount: data.betAmount,
+        actions: this.actions
       },
       io
     );
@@ -337,13 +326,17 @@ class Room {
     this.piggyback("srqst_ingame_result", players, io);
   }
 
-  nextBanker() {}
+  nextBanker() {
+    this.bankerQueue.splice(0, 1);
+    if (this.bankerQueue.length > 0) this.bankerIndex = this.bankerQueue[0];
+    else this.bankerIndex = -1;
+  }
 
   checkActions() {
     for (let i = 0; i < this.players.length; i++) {
       if (
         this.players[i] &&
-        (this.players[i] === this.bankerIndex ||
+        (this.players[i].sid === this.bankerIndex ||
           this.revealed.includes(this.players[i]))
       )
         continue;
@@ -450,10 +443,10 @@ class Room {
     );
     this.players.forEach(p => {
       if (p) {
-        let socket = Users.getUser(p.sid).socket;
-        io.to(socket).emit(protocol, {
+        let user = Users.getUser(p.sid);
+        io.to(user.socket).emit(protocol, {
           ...content,
-          players: this.filterRoom(p)
+          ...this.filterRoomState(user)
         });
       }
     });
@@ -465,15 +458,9 @@ class Room {
     return {
       roomnumber: this.roomnumber,
       players: this.playerCnt(),
+      spectators: this.spectators.length,
       bank: this.minimumbank,
-      status:
-        this.playerCnt() === this.players.length
-          ? "full"
-          : this.bankerIndex === -1
-          ? "not started"
-          : this.phaseIndex === 0
-          ? "waiting"
-          : "playing"
+      status: this.phaseIndex === 0 ? "waiting" : "playing"
     };
   }
 
@@ -507,19 +494,20 @@ class Room {
         });
   }
 
-  filterRoomState() {
+  filterRoomState(user) {
     return {
+      ts: new Date().getTime(),
       roomnumber: this.roomnumber,
-      players: this.players
-        .filter(p => p)
-        .map(p => {
-          let player = {
-            ...p,
-            cards: this.hiddenCards(p)
-          };
+      players: this.players.map(p => {
+        if (p) {
+          let player = { ...p };
+          if (user && user.sid !== p.sid)
+            player.cards = this.hiddenCards(player);
           delete player["lastConfirmedAnimation"];
           return player;
-        }),
+        }
+        return p;
+      }),
       bankerIndex: this.bankerIndex,
       turnIndex: this.turnIndex,
       phaseIndex: this.phaseIndex,

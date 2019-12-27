@@ -39,19 +39,25 @@ class Lobby {
       socket.emit("resp_room_enter", { retcode: 2 });
       return;
     }
-    if (this.rooms[room].findSeat() === -1) {
-      Logger.respLog("resp_room_enter", { retcode: 1 }, "room full");
-      socket.emit("resp_room_enter", { retcode: 1 });
-      return;
-    }
     let user = Users.getUser(socket.id);
     if (user) {
       user.room = data.roomnumber;
       this.rooms[room].enter(user, socket, io);
       return;
     }
-    Logger.respLog("resp_room_enter", { retcode: 2 }, "unknown error");
+    Logger.respLog("resp_room_enter", { retcode: 2 }, "user not found");
     socket.emit("resp_room_enter", { retcode: 2 });
+  }
+
+  getSeated(data, socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].getSeated(data, user, socket, io);
+      return;
+    }
+    Logger.respLog("resp_ingame_sit", { retcode: 2 }, "user or room not found");
+    socket.emit("resp_ingame_sit", { retcode: 2 });
   }
 
   leave(socket, io) {
@@ -179,7 +185,10 @@ class Lobby {
         this.rooms[room].filterRoom(),
         "success"
       );
-      socket.emit("resp_ingame_state", this.rooms[room].filterRoomState());
+      socket.emit(
+        "resp_ingame_state",
+        this.rooms[room].filterRoomState(socket.id)
+      );
       return;
     }
     Logger.respLog(
