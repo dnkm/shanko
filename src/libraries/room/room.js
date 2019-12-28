@@ -65,7 +65,8 @@ class Room {
   }
 
   enter(user, socket, io) {
-    if (!this.spectators.includes(user.sid)) this.spectators.push(user.sid);
+    if (!this.spectators.includes(user.sid) || this.findPlayer(user.sid) !== -1)
+      this.spectators.push(user.sid);
     Logger.respLog(
       "resp_room_enter",
       { retcode: 0, ...this.filterRoomState() },
@@ -77,7 +78,10 @@ class Room {
   ready(user, socket, io) {
     if (!this.spectators.includes(user.sid)) return;
     Logger.respLog("resp_ingame_imready", { retcode: 0 }, "success");
-    socket.emit("resp_ingame_imready", { retcode: 0 });
+    socket.emit("resp_ingame_imready", {
+      retcode: 0,
+      ...this.filterRoomState()
+    });
     socket.join(this.roomnumber);
   }
 
@@ -90,7 +94,7 @@ class Room {
       socket.emit("resp_ingame_sit", { retcode: 1 });
       return;
     }
-    this.spectators.filter(s => s !== user.sid);
+    this.spectators = this.spectators.filter(s => s !== user.sid);
     this.players[data.seatIndex] = new Player(socket.id, data.seatIndex);
     if (this.bankerIndex === -1) {
       this.bankerIndex = user.sid;
@@ -99,13 +103,16 @@ class Room {
     io.to(this.roomnumber).emit("srqst_ingame_newuser", {
       ...this.players[data.seatIndex]
     });
-    socket.emit("resp_ingame_sit", { retcode: 0 });
+    socket.emit("resp_ingame_sit", {
+      retcode: 0,
+      ...this.filterRoomState(user)
+    });
     if (this.playerCnt() === 3) this.nextPhase(io);
   }
 
   leave(user, socket, io) {
     if (this.spectators.includes(user.sid)) {
-      this.spectators.filter(s => s.sid !== user.sid);
+      this.spectators = this.spectators.filter(s => s !== user.sid);
       socket.emit("resp_room_leave", { retcode: 0 });
       return;
     }
@@ -113,7 +120,7 @@ class Room {
     if (p !== -1) {
       if (user.sid === this.bankerIndex) this.nextBanker();
       user.room = undefined;
-      this.bankerQueue.filter(b => b !== user.sid);
+      this.bankerQueue = this.bankerQueue.filter(b => b !== user.sid);
       this.players[p] = undefined;
       socket.leave(this.roomnumber);
       Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
