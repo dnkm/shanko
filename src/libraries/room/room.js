@@ -204,8 +204,9 @@ class Room {
     if (
       this.phaseIndex !== 3 ||
       p === -1 ||
-      user.sid !== this.bankerIndex ||
-      this.revealed.includes(user.sid)
+      user.sid === this.bankerIndex ||
+      this.revealed.includes(user.sid) ||
+      this.checkAction(user.sid)
     )
       return;
     if (data.action === "draw") this.players[p].cards.push(this.deck.pop());
