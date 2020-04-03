@@ -1,9 +1,10 @@
 const Logger = require("./logger");
+const pool = require("../utils/db");
 
 let userbase = {
   david: {
     id: "david",
-    sid: 0,
+    sid: 10,
     password: "0000",
     nickname: "coffee",
     gender: 0,
@@ -77,6 +78,28 @@ let userbase = {
     imgnumber: 5,
     win: 0,
     lose: 999
+  },
+  tank: {
+    id: "tank",
+    sid: 8,
+    password: "0000",
+    nickname: "tank",
+    gender: 1,
+    cash: 5000000,
+    imgnumber: 4,
+    win: 999,
+    lose: 999
+  },
+  yam: {
+    id: "yam",
+    sid: 9,
+    password: "0000",
+    nickname: "yam",
+    gender: 0,
+    cash: 4000000,
+    imgnumber: 3,
+    win: 400,
+    lose: 400
   }
 };
 
@@ -118,6 +141,7 @@ class Users {
     Logger.respLog("resp_userinfo", u, "success");
     socket.emit("resp_userinfo", u);
   }
+
   changeGender(data, socket) {
     for (let i = 0; i < this.users.length; i++) {
       if (this.users[i].socket === socket.id) {
@@ -189,6 +213,10 @@ class Users {
     socket.emit("resp_login", { retcode: 0, sid: user.sid });
   }
 
+  logout(socket) {
+    this.users = this.users.filter(u => u.sid !== socket.id);
+  }
+
   getUser(data) {
     for (let i = 0; i < this.users.length; i++) {
       if (
@@ -199,6 +227,10 @@ class Users {
         return this.users[i];
     }
     return undefined;
+  }
+
+  reset() {
+    this.users = [];
   }
 }
 

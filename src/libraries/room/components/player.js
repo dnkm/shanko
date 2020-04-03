@@ -9,11 +9,10 @@ class Player {
     this.balance = user.cash;
     this.imgnumber = user.imgnumber;
     this.gender = user.gender;
-    this.isReady = false;
-    this.isPlaying = false;
     this.cards = [];
     this.bet = 0;
-    this.lastConfirmedAnimation = "";
+    this.isActive = false;
+    this.inactive = false;
   }
 }
 

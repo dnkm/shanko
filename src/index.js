@@ -14,7 +14,8 @@ io.on("connection", socket => {
   console.log("user " + socket.id + " has connected");
 
   socket.use((socket, next) => {
-    Logger.reqLog(socket);
+    let u = Users.getUser(socket.id);
+    Logger.reqLog(socket, u);
     try {
       if (socket.length > 1 && typeof socket[1] === "string")
         socket[1] = JSON.parse(socket[1]);
@@ -22,7 +23,14 @@ io.on("connection", socket => {
     next();
   });
 
-  socket.on("disconnect", () => console.log("user has disconnected"));
+  socket.on("disconnect", () => {
+    console.log("user has disconnected");
+    Users.logout(socket);
+    let u = Users.getUser(socket.id);
+    if (u && u.room) {
+      Lobby.leave(socket, io);
+    }
+  });
 
   // user sockets
   socket.on("rqst_login", data => {
@@ -56,6 +64,9 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));
   socket.on("rqst_ingame_imready", () => Lobby.ready(socket, io));
   socket.on("rqst_ingame_sit", data => Lobby.getSeated(data, socket, io));
+  socket.on("rqst_ingame_standup", () => Lobby.standUp(socket, io));
+  socket.on("rqst_ingame_standupcancel", () => Lobby.standUpCancel(socket, io));
+  socket.on("rqst_ingame_leavecancel", () => Lobby.leaveCancel(socket, io));
 
   // room server sockets
   socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
@@ -73,9 +84,15 @@ io.on("connection", socket => {
     Lobby.confirm("three card", socket, io)
   );
   socket.on("sresp_ingame_banker_action", data =>
-    Lobby.bankerAction(data, socket, io)
+    Lobby.bankerAction(data.action, socket, io)
   );
   socket.on("sresp_ingame_result", () => Lobby.confirm("results", socket, io));
+
+  // admin sockets
+  socket.on("server_reset", () => {
+    Lobby.reset();
+    Users.reset();
+  });
 });
 
 http.listen(8080, () => console.log("server started"));
