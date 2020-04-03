@@ -41,8 +41,17 @@ class Lobby {
     }
     let user = Users.getUser(socket.id);
     if (user) {
-      user.room = data.roomnumber;
-      this.rooms[room].enter(user, socket, io);
+      if (user.room && user.room !== data.roomnumber) {
+        Logger.respLog(
+          "resp_room_enter",
+          { retcode: 1 },
+          "playing in another room"
+        );
+        socket.emit("resp_room_enter", { retcode: 1 });
+      } else {
+        user.room = data.roomnumber;
+        this.rooms[room].enter(user, socket, io);
+      }
       return;
     }
     Logger.respLog("resp_room_enter", { retcode: 2 }, "user not found");
@@ -60,6 +69,30 @@ class Lobby {
     socket.emit("resp_ingame_sit", { retcode: 2 });
   }
 
+  standUp(socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].standUp(user, socket, io);
+      return;
+    }
+    Logger.respLog(
+      "resp_ingame_standup",
+      { retcode: 2 },
+      "user or room not found"
+    );
+    socket.emit("resp_ingame_standup", { retcode: 2 });
+  }
+
+  standUpCancel(socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].standUpCancel(user, socket, io);
+      return;
+    }
+  }
+
   leave(socket, io) {
     let user = Users.getUser(socket.id);
     if (user && user.room) {
@@ -67,8 +100,17 @@ class Lobby {
       this.rooms[room].leave(user, socket, io);
       return;
     }
-    Logger.respLog("resp_room_leave", { retcode: 1 }, "user or room not found");
-    socket.emit("resp_room_leave", { retcode: 1 });
+    Logger.respLog("resp_room_leave", { retcode: 2 }, "user or room not found");
+    socket.emit("resp_room_leave", { retcode: 2 });
+  }
+
+  cancelLeave(socket, io) {
+    let user = Users.getUser(socket.id);
+    if (user && user.room) {
+      let room = this.findRoom(user.room);
+      this.rooms[room].cancelLeave(user, socket, io);
+      return;
+    }
   }
 
   findRoom(room) {
@@ -86,10 +128,10 @@ class Lobby {
     } else {
       Logger.respLog(
         "resp_ingame_userlist",
-        { retcode: 1 },
+        { retcode: 2 },
         "user or room not found"
       );
-      socket.emit("resp_ingame_userlist", { retcode: 1 });
+      socket.emit("resp_ingame_userlist", { retcode: 2 });
     }
   }
 
@@ -113,10 +155,10 @@ class Lobby {
 
     Logger.respLog(
       "resp_ingame_userinfo",
-      { retcode: 1 },
+      { retcode: 2 },
       "user or room not found"
     );
-    socket.emit("resp_ingame_userinfo", { retcode: 1 });
+    socket.emit("resp_ingame_userinfo", { retcode: 2 });
   }
 
   ready(socket, io) {
@@ -128,19 +170,10 @@ class Lobby {
     }
     Logger.respLog(
       "resp_ingame_imready",
-      { retcode: 1 },
+      { retcode: 2 },
       "user or room not found"
     );
-    socket.emit("resp_ingame_imready", { retcode: 1 });
-  }
-
-  start(socket, io) {
-    let user = Users.getUser(socket.id);
-    if (user && user.room) {
-      let room = this.findRoom(user.room);
-      this.rooms[room].start(user, socket, io);
-      return;
-    }
+    socket.emit("resp_ingame_imready", { retcode: 2 });
   }
 
   bet(data, socket, io) {
@@ -182,21 +215,28 @@ class Lobby {
       let room = this.findRoom(user.room);
       Logger.respLog(
         "resp_ingame_state",
-        this.rooms[room].filterRoom(),
+        this.rooms[room].filterRoomState(user),
         "success"
       );
-      socket.emit(
-        "resp_ingame_state",
-        this.rooms[room].filterRoomState(socket.id)
-      );
+      socket.emit("resp_ingame_state", this.rooms[room].filterRoomState(user));
       return;
     }
     Logger.respLog(
       "resp_ingame_state",
-      { retcode: 1 },
+      { retcode: 2 },
       "user or room not found"
     );
-    socket.emit("resp_ingame_state", { retcode: 1 });
+    socket.emit("resp_ingame_state", { retcode: 2 });
+  }
+
+  reset() {
+    this.rooms = [
+      ...this.populateRooms("RANK1"),
+      ...this.populateRooms("RANK2"),
+      ...this.populateRooms("RANK3"),
+      ...this.populateRooms("RANK4"),
+      ...this.populateRooms("RANK5")
+    ];
   }
 }
 

@@ -1,0 +1,45 @@
+{
+  "ts": 123123123,
+  "roomnumber": 5040,
+  "players": [
+    {
+      "sid": 5,
+      "nickname": "test",
+      "balance": 10000,
+      "bet": 5000,
+      "imgnumber": 4,
+      "gender": 0,
+      "isReady": false,
+      "isPlaying": false,
+      "cards": [{ "img": "spade", "num": "A" }],
+      "win": 0,
+      "loss": 0,
+      "seatIndex": 1
+    },
+    {
+      "sid": 6,
+      "nickname": "test1",
+      "balance": 10000,
+      "bet": 5000,
+      "imgnumber": 4,
+      "gender": 0,
+      "isReady": false,
+      "isPlaying": false,
+      "cards": [{ "img": "hidden" }, { "img": "hidden" }],
+      "win": 0,
+      "loss": 0,
+      "seatIndex": 2
+    }
+  ],
+  "bankerIndex": 0,
+  "phaseIndex": 0,
+  "minimumBank": 30000,
+  "bank": 30000,
+  "warning": -1,
+  "winners": [100, 55, 200],
+  "losers": [121, 1],
+  "coins": { "10": 5, "100": 10 },
+  "status": "playing",
+  "deck": 48,
+  "spectator": true
+}
