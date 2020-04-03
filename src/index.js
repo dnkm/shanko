@@ -8,7 +8,7 @@ const io = require("socket.io")(http, {
   pingTimeout: 5000
 });
 
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
+app.get("/", (req, res) => res.send("v1.0.0"));
 
 io.on("connection", socket => {
   console.log("user " + socket.id + " has connected");
