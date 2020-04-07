@@ -125,7 +125,7 @@ class Users {
 
   profile(socket) {
     let user = this.getUser(socket.id);
-    if (user === undefined) {
+    if (typeof user === "undefined") {
       Logger.respLog("resp_userinfo", { retcode: 1 }, "user not found");
       socket.emit("resp_userinfo", { retcode: 1 });
       return;
@@ -143,49 +143,51 @@ class Users {
   }
 
   changeGender(data, socket) {
-    for (let i = 0; i < this.users.length; i++) {
-      if (this.users[i].socket === socket.id) {
-        this.users[i].gender = data.gender;
-        userbase[this.users[i].id].gender = data.gender;
-        Logger.respLog(
-          "resp_changegender",
-          { retcode: 0, gender: data.gender },
-          "success"
-        );
-        socket.emit("resp_changegender", { retcode: 0, gender: data.gender });
-        return;
-      }
+    let user = this.getUser(socket.id);
+    if (typeof user !== "undefined") {
+      user.gender = data.gender;
+      userbase[user.id].gender = data.gender;
+      Logger.respLog(
+        "resp_changegender",
+        { retcode: 0, gender: data.gender },
+        "success"
+      );
+      socket.emit("resp_changegender", { retcode: 0, gender: data.gender });
+    } else {
+      Logger.respLog(
+        "resp_changegender",
+        { retcode: 1 },
+        "socket id not found"
+      );
+      socket.emit("resp_changegender", { retcode: 1 });
     }
-    Logger.respLog("resp_changegender", { retcode: 1 }, "socket id not found");
-    socket.emit("resp_changegender", { retcode: 1 });
   }
 
-  changeImgNumber(data, socket) {
-    for (let i = 0; i < this.users.length; i++) {
-      if (this.users[i].socket === socket.id) {
-        this.users[i].imgnumber = data.imgnumber;
-        userbase[this.users[i].id].imgnumber = data.imgnumber;
-        Logger.respLog(
-          "resp_changeimgnumber",
-          {
-            retcode: 0,
-            imgnumber: data.imgnumber
-          },
-          "success"
-        );
-        socket.emit("resp_changeimgnumber", {
+  changeImg(data, socket) {
+    let user = this.getUser(socket.id);
+    if (typeof user !== "undefined") {
+      userbase[user.id].imgnumber = data.imgnumber;
+      user.imgnumber = data.imgnumber;
+      Logger.respLog(
+        "resp_changeimgnumber",
+        {
           retcode: 0,
           imgnumber: data.imgnumber
-        });
-        return;
-      }
+        },
+        "success"
+      );
+      socket.emit("resp_changeimgnumber", {
+        retcode: 0,
+        imgnumber: data.imgnumber
+      });
+    } else {
+      Logger.respLog(
+        "resp_changeimgnumber",
+        { retcode: 1 },
+        "socket id not found"
+      );
+      socket.emit("resp_changeimgnumber", { retcode: 1 });
     }
-    Logger.respLog(
-      "resp_changeimgnumber",
-      { retcode: 1 },
-      "socket id not found"
-    );
-    socket.emit("resp_changeimgnumber", { retcode: 1 });
   }
 
   changeCash(user, amount) {
@@ -195,7 +197,7 @@ class Users {
 
   login(data, socket) {
     if (
-      userbase[data.id] === undefined ||
+      typeof userbase[data.id] === "undefined" ||
       userbase[data.id].password !== data.password
     ) {
       Logger.respLog("resp_login", { retcode: 1 }, "login unsuccessful");
@@ -203,18 +205,18 @@ class Users {
       return;
     }
     let user = this.getUser(data.id);
-    if (user === undefined) {
+    if (typeof user === "undefined") {
       user = new User(data, socket);
       this.users.push(user);
-    } else {
-      user.socket = socket.id;
-    }
+    } else user.socket = socket.id;
     Logger.respLog("resp_login", { retcode: 0, sid: user.sid }, "success");
     socket.emit("resp_login", { retcode: 0, sid: user.sid });
   }
 
   logout(socket) {
-    this.users = this.users.filter(u => u.sid !== socket.id);
+    let user = this.getUser(socket.id);
+    if (typeof user !== "undefined" && !user.playing)
+      this.users = this.users.filter(u => u.sid !== user.sid);
   }
 
   getUser(data) {

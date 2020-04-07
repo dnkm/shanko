@@ -78,6 +78,7 @@ class Room {
     if (!this.spectators.includes(user.sid) && this.findPlayer(user.sid) === -1)
       this.spectators.push(user.sid);
     user.room = this.roomnumber;
+    user.inroom = true;
     Logger.respLog(
       "resp_room_enter",
       { retcode: 0, ...this.filterRoomState(user) },
@@ -101,7 +102,7 @@ class Room {
   }
 
   getSeated(data, user, socket, io) {
-    if (this.players[data.seatIndex] !== undefined) {
+    if (typeof this.players[data.seatIndex] !== "undefined") {
       socket.emit("resp_ingame_sit", { retcode: 1 });
       return;
     }
@@ -176,6 +177,7 @@ class Room {
         return;
       }
       if (this.phaseIndex === 0 || this.phaseIndex === 6) {
+        user.playing = false;
         this.players[si] = undefined;
         this.spectators.push(user.sid);
         if (this.bankerIndex === user.sid) this.nextBanker();
@@ -197,18 +199,10 @@ class Room {
   }
 
   leave(user, socket, io) {
+    // spectator leave
     if (this.spectators.includes(user.sid)) {
       this.spectators = this.spectators.filter(s => s !== user.sid);
       socket.leave(this.roomnumber);
-      this.piggyback(
-        "resp_room_leave",
-        {
-          retcode: 0,
-          sid: user.sid,
-          roomnumber: this.roomnumber
-        },
-        io
-      );
       socket.emit("resp_room_leave", {
         retcode: 0,
         sid: user.sid,
@@ -216,10 +210,14 @@ class Room {
       });
       return;
     }
+
+    // player leave
     let p = this.findPlayer(user.sid);
     if (p !== -1) {
+      // not active player leave
       if (!this.players[p].isActive) {
         user.room = undefined;
+        user.inroom = false;
         if (this.bankerIndex === user.sid) this.nextBanker();
         this.bankerQueue = this.bankerQueue.filter(b => b !== user.sid);
         this.players[p] = undefined;
@@ -241,18 +239,22 @@ class Room {
         Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
         return;
       }
+
+      // attempting to leave if banker and bank is not empty
+      // or if playing phase is active
       if (
         (user.sid === this.bankerIndex && this.bank !== 0) ||
         (this.phaseIndex !== 0 && this.phaseIndex !== 6)
       ) {
-        socket.emit("resp_room_leave", {
-          retcode: 1
-        });
+        socket.emit("resp_room_leave", { retcode: 1 });
         return;
       }
 
+      // leaving during phase 0 or phase 6
       if (this.phaseIndex === 0 || this.phaseIndex === 6) {
         user.room = undefined;
+        user.playing = false;
+        user.inroom = false;
         if (this.bankerIndex === user.sid) this.nextBanker();
         this.bankerQueue = this.bankerQueue.filter(b => b !== user.sid);
         this.players[p] = undefined;
@@ -272,9 +274,7 @@ class Room {
           roomnumber: this.roomnumber
         });
         Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
-      } else {
-        this.leavers.push({ sid: user.sid, socket });
-      }
+      } else this.leavers.push({ sid: user.sid, socket });
     }
   }
 
@@ -288,22 +288,20 @@ class Room {
   start(io) {
     this.phaseIndex = 0;
     console.log("---start---");
-    this.clearTimer();
-    this.debug();
     this.nextPhase = this.betting;
-    this.sorted = [];
     this.betTotal = 0;
-    this.reserved = 0;
     this.winners = [];
     this.losers = [];
     this.revealed = [];
     this.coins = {};
     this.deck = newDeck();
     this.players.forEach(p => {
-      if (p) {
+      if (typeof p !== "undefined") {
         p.isActive = true;
         p.cards = [];
         p.bet = 0;
+        let user = Users.getUser(p.sid);
+        user.playing = true;
       }
     });
     if (this.deposit) {
@@ -314,17 +312,12 @@ class Room {
       this.coins[this.minimumbank / 10] = 10;
       Users.changeCash(Users.getUser(this.bankerIndex), -this.minimumbank);
     }
-    console.log(this.players);
     this.nextPhase(io);
   }
 
   betting(io) {
     this.phaseIndex = 1;
     console.log("---bet---");
-    this.clearTimer();
-    this.debug();
-    this.nextPhase = this.deal;
-    this.timer = this.setTimer(io);
     this.piggyback(
       "srqst_ingame_gamestart",
       { bankerDeposit: this.deposit },
@@ -338,6 +331,7 @@ class Room {
     if (
       this.phaseIndex !== 1 ||
       p === -1 ||
+      !this.players[p].isActive ||
       this.bankerIndex === user.sid ||
       this.checkAction(this.players[p])
     )
@@ -351,7 +345,7 @@ class Room {
       betAmount: bet,
       coins: data.coins
     });
-    if (data.coins)
+    if (typeof data.coins !== "undefined")
       Object.keys(data.coins).forEach(c => {
         if (this.coins[c]) this.coins[c] += data.coins[c];
         else this.coins[c] = data.coins[c];
@@ -366,7 +360,6 @@ class Room {
       io
     );
     if (this.checkActions()) {
-      this.clearTimer();
       this.actions = [];
       this.deal(io);
     }
@@ -374,13 +367,12 @@ class Room {
 
   deal(io) {
     this.phaseIndex = 2;
-    this.clearTimer();
     console.log("---deal---");
-    this.debug();
     this.nextPhase = this.playerActions;
     this.shuffle();
     let bWin = false;
-    console.log("---initial state---");
+
+    // 1002 testing room for banker auto-win
     if (this.roomnumber === 1002) {
       this.players.forEach(p => {
         if (p && p.isActive) {
@@ -400,36 +392,29 @@ class Room {
       });
     } else {
       this.players.forEach(p => {
-        if (p && p.isActive) {
+        if (typeof p !== "undefined" && p.isActive) {
           p.cards.push(this.deck.pop());
           p.cards.push(this.deck.pop());
-          if (this.cardsValue(p.cards).total >= 8) {
+          if (this.cardsValue(p.cards).total >= 8)
             if (this.bankerIndex === p.sid) bWin = true;
             else this.revealed.push(p.sid);
-          }
         }
       });
     }
 
     if (bWin) this.nextPhase = this.results;
     else {
-      this.revealed.forEach(sid => {
-        this.winners.push(sid);
-      });
+      this.revealed.forEach(sid => this.winners.push(sid));
       if (this.revealed.length === this.playerCnt() - 1)
         this.nextPhase = this.results;
     }
-    this.setTimer(io);
     this.piggyback("srqst_ingame_deal", {}, io);
   }
 
   playerActions(io) {
     this.phaseIndex = 3;
     console.log("---playeraction---");
-    this.clearTimer();
-    this.debug();
     this.nextPhase = this.threeCard;
-    this.setTimer(io);
     this.piggyback("srqst_ingame_player_action", {}, io);
   }
 
@@ -438,6 +423,7 @@ class Room {
     if (
       this.phaseIndex !== 3 ||
       p === -1 ||
+      !this.players[p].isActive ||
       user.sid === this.bankerIndex ||
       this.revealed.includes(user.sid) ||
       this.checkAction(user.sid)
@@ -456,7 +442,6 @@ class Room {
         io
       );
       this.actions = [];
-      this.clearTimer();
       this.nextPhase(io);
     }
   }
@@ -464,29 +449,28 @@ class Room {
   threeCard(io) {
     this.phaseIndex = 4;
     console.log("---threecard---");
-    this.clearTimer();
-    this.debug();
     this.nextPhase = this.bankerActions;
-    this.setTimer(io);
     this.piggyback("srqst_ingame_three_card", {}, io);
   }
 
   bankerActions(io) {
     this.phaseIndex = 5;
     console.log("---bankeraction---");
-    this.clearTimer();
-    this.debug();
     this.nextPhase = this.results;
-    this.setTimer(io);
     this.piggyback("srqst_ingame_banker_action", {}, io);
   }
-
+  
   bankerAction(data, user, socket, io) {
     if (user.sid !== this.bankerIndex) return;
     if (this.phaseIndex === 4) {
       if (data === "threecard") {
         this.players.forEach(p => {
-          if (p && p.cards.length === 3) {
+          if (
+            typeof p !== "undefined" &&
+            p.sid !== this.bankerIndex &&
+            p.cards.length === 3 &&
+            p.isActive
+          ) {
             this.revealed.push(p.sid);
             let result = this.result(p.cards);
             if (result === -1) this.losers.push(p.sid);
@@ -497,8 +481,6 @@ class Room {
           this.nextPhase = this.results;
       }
       this.piggyback("srqst_ingame_three_cards", {}, io);
-
-      this.clearTimer();
       return;
     }
     if (this.phaseIndex === 5) {
@@ -525,7 +507,6 @@ class Room {
           io
         );
       }
-      this.clearTimer();
       this.nextPhase(io);
     }
   }
@@ -533,14 +514,19 @@ class Room {
   results(io) {
     this.phaseIndex = 6;
     console.log("---results---");
-    this.clearTimer();
-    this.debug();
-    this.setTimer(io);
     this.nextPhase = this.start;
     this.bank += this.betTotal;
     let resultplayers = [];
+    let reserved = 0;
+    let sorted = [];
     this.players.forEach(p => {
-      if (p && this.bankerIndex !== p.sid) {
+      if (
+        typeof p !== "undefined" &&
+        this.bankerIndex !== p.sid &&
+        p.isActive
+      ) {
+        let user = Users.getUser(p.sid);
+        user.playing = false;
         delete p.lastConfirmedAnimation;
         let result = this.result(p.cards);
         if (result === -1 && !this.winners.includes(p.sid)) {
@@ -553,21 +539,20 @@ class Room {
             winAmt: 0
           });
         } else {
-          this.reserved += p.bet;
+          reserved += p.bet;
           if (!this.winners.includes(p.sid)) this.winners.push(p.sid);
-          this.sorted.push(p);
+          sorted.push(p);
         }
       }
     });
-    this.sorted = this.sorted.sort((a, b) => b.bet - a.bet);
-    this.sorted.forEach(p => {
+    sorted = sorted.sort((a, b) => b.bet - a.bet);
+    sorted.forEach(p => {
       let result = this.cardsValue(p.cards).multiplier;
       if (result === -1) result = 1;
       let winAmt = p.bet * result + p.bet;
 
-      this.reserved -= p.bet;
-      if (winAmt > this.bank - this.reserved)
-        winAmt = this.bank - this.reserved;
+      reserved -= p.bet;
+      if (winAmt > this.bank - reserved) winAmt = this.bank - reserved;
       resultplayers.push({
         sid: p.sid,
         result,
@@ -641,13 +626,14 @@ class Room {
       this.standers = [];
     }, 5000);
 
+    console.log(resultplayers);
     this.piggyback("srqst_ingame_result", { resultplayers }, io);
     if (this.bank <= 0) this.nextBanker();
   }
 
   nextBanker() {
     let current = this.findPlayer(this.bankerIndex);
-    delete this.players[current].isBanker;
+    delete this.players[current].banker;
     let removed = this.bankerQueue.splice(0, 1);
     this.bankerQueue.push(removed[0]);
     if (
@@ -655,63 +641,57 @@ class Room {
       this.bankerQueue[0] !== this.bankerIndex
     ) {
       let next = this.findPlayer(this.bankerQueue[0]);
-      this.players[next].isBanker = true;
+      this.players[next].banker = true;
       this.bankerIndex = this.players[next].sid;
     } else this.bankerIndex = -1;
 
     this.deposit = true;
   }
 
+  // confirming animations and checking actions
+
   checkActions() {
     for (let i = 0; i < this.players.length; i++) {
+      let p = this.players[i];
       if (
-        this.players[i] &&
-        (this.players[i].sid === this.bankerIndex ||
-          this.revealed.includes(this.players[i].sid) ||
-          !this.players[i].isActive)
+        typeof p === "undefined" ||
+        p.sid === this.bankerIndex ||
+        this.revealed.includes(p.sid) ||
+        !p.isActive
       )
         continue;
-      if (this.players[i] && !this.checkAction(this.players[i])) return false;
+      if (!this.checkAction(p)) return false;
     }
     return true;
   }
 
   checkAction(player) {
-    for (let i = 0; i < this.actions.length; i++)
-      if (this.actions[i].sid === player.sid) return true;
+    for (let i = 0; i < this.actions.length; i++) {
+      let a = this.actions[i];
+      if (a.sid === player.sid) return true;
+    }
     return false;
   }
 
   confirm(data, user, io) {
     if (!PHASES[this.phaseIndex].anims.includes(data)) return;
-    for (let i = 0; i < this.players.length; i++) {
-      if (
-        this.players[i] &&
-        this.players[i].isActive &&
-        user.sid === this.players[i].sid
-      )
-        this.players[i].lastConfirmedAnimation = data;
-    }
+    let p = this.findPlayer(user.sid);
+    if (p !== -1) this.players[p].lastConfirmedAnimation = data;
     if (this.sync()) this.nextPhase(io);
   }
 
+
   sync() {
     for (let i = 0; i < this.players.length; i++) {
+      let p = this.players[i];
       if (
-        this.players[i] &&
-        !PHASES[this.phaseIndex].anims.includes(
-          this.players[i].lastConfirmedAnimation
-        )
+        typeof p !== "undefined" &&
+        p.isActive &&
+        !PHASES[this.phaseIndex].anims.includes(p.lastConfirmedAnimation)
       )
         return false;
     }
     return true;
-  }
-
-  findPlayer(sid) {
-    for (let i = 0; i < this.players.length; i++)
-      if (this.players[i] && sid === this.players[i].sid) return i;
-    return -1;
   }
 
   // game
@@ -725,6 +705,8 @@ class Room {
       this.deck[s2] = temp;
     }
   }
+
+  // card results
 
   cardsValue(cards) {
     let highCard = 0;
@@ -774,7 +756,7 @@ class Room {
       "phase - " + PHASES[this.phaseIndex].phase
     );
     this.players.forEach(p => {
-      if (p) {
+      if (typeof p !== "undefined") {
         let user = Users.getUser(p.sid);
         io.to(user.socket).emit(protocol, {
           ...content,
@@ -811,7 +793,7 @@ class Room {
       ts: new Date().getTime(),
       roomnumber: this.roomnumber,
       players: this.players.map(p => {
-        if (p) {
+        if (typeof p !== "undefined") {
           let player = { ...p };
           delete player["lastConfirmedAnimation"];
           if (this.phaseIndex === 6) return player;
@@ -821,7 +803,7 @@ class Room {
             this.losers.includes(p.sid)
           )
             return player;
-          if (user && user.sid === p.sid) return player;
+          if (typeof user !== "undefined" && user.sid === p.sid) return player;
           player.cards = this.hiddenCards(player.cards.length);
           return player;
         }
@@ -856,97 +838,20 @@ class Room {
     socket.emit("resp_ingame_userlist", sids);
   }
 
-  defaultAction(io) {
-    this.players.forEach(p => {
-      if (p && p.sid !== this.bankerIndex && !this.checkAction(p)) {
-        switch (this.phaseIndex) {
-          case 1:
-            p.bet = Math.floor(this.minimumbank / 10);
-            p.balance -= p.bet;
-            this.bank += p.bet;
-            this.actions.push({
-              sid: p.sid,
-              betAmount: p.bet,
-              coins: { [p.bet / 10]: 10 }
-            });
-            this.piggyback(
-              "srqst_ingame_place_bet",
-              {
-                sid: p.sid,
-                betAmount: p.bet,
-                actions: this.actions
-              },
-              io
-            );
-            break;
-          case 3:
-            if (!this.revealed.includes[p.sid])
-              this.actions.push({
-                sid: p.sid,
-                action: "pass"
-              });
-            break;
-          default:
-            break;
-        }
-        if (this.phaseIndex === 3) {
-          this.phaseIndex = 4;
-          this.piggyback(
-            "srqst_ingame_player_action_update",
-            {
-              actions: this.actions
-            },
-            io
-          );
-        }
-      }
-    });
+  findPlayer(sid) {
+    for (let i = 0; i < this.players.length; i++)
+      if (this.players[i] && sid === this.players[i].sid) return i;
+    return -1;
   }
 
-  setTimer(io) {
-    // this.timer = setTimeout(() => {
-    //   if (this.phaseIndex === 1 || this.phaseIndex === 3) {
-    //     this.defaultAction(io);
-    //     this.actions = [];
-    //   } else if (this.phaseIndex === 4) {
-    //     this.phaseindex = 5;
-    //   } else if (this.phaseIndex === 5) {
-    //     this.phaseIndex = 6;
-    //     this.piggyback(
-    //       "srqst_ingame_banker_action_update",
-    //       {
-    //         sid: this.bankerIndex,
-    //         action: "pass"
-    //       },
-    //       io
-    //     );
-    //   } else if (this.phaseIndex === 6) {
-    //     let cnt = 0;
-    //     this.players.forEach(p => {
-    //       if (p) cnt++;
-    //     });
-    //     if (cnt < 3) {
-    //       clearTimeout(this.timer);
-    //       this.phaseIndex = 0;
-    //       this.piggyback("srqst_ingame_waiting", {}, io);
-    //       return;
-    //     }
-    //   }
-    //   this.nextPhase(io);
-    // }, 100000);
-  }
-
-  clearTimer() {
-    // clearTimeout(this.timer);
-  }
-
-  debug() {
-    // console.log("---" + this.phaseIndex + "---");
-    // this.players.forEach(p => {
-    //   if (p) {
-    //     console.log(p.sid, "" + p.inactive);
-    //   }
-    // });
+  shuffle() {
+    for (let i = 0; i < 1000; i++) {
+      let s1 = Math.floor(Math.random() * 52);
+      let s2 = Math.floor(Math.random() * 52);
+      let temp = this.deck[s1];
+      this.deck[s1] = this.deck[s2];
+      this.deck[s2] = temp;
+    }
   }
 }
 

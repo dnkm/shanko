@@ -27,38 +27,24 @@ io.on("connection", socket => {
     console.log("user has disconnected");
     Users.logout(socket);
     let u = Users.getUser(socket.id);
-    if (u && u.room) {
-      Lobby.leave(socket, io);
+    if (typeof u !== "undefined") {
+      if (typeof u.room !== "undefined") Lobby.leave(socket, io);
+      u.inroom = false;
     }
   });
 
   // user sockets
-  socket.on("rqst_login", data => {
-    Users.login(data, socket);
-  });
-  socket.on("rqst_userinfo", () => {
-    Users.profile(socket);
-  });
-  socket.on("rqst_changegender", data => {
-    Users.changeGender(data, socket);
-  });
-  socket.on("rqst_changeimgnumber", data => {
-    Users.changeImgNumber(data, socket);
-  });
+  socket.on("rqst_login", data => Users.login(data, socket));
+  socket.on("rqst_userinfo", () => Users.profile(socket));
+  socket.on("rqst_changegender", data => Users.changeGender(data, socket));
+  socket.on("rqst_changeimgnumber", data => Users.changeImg(data, socket));
 
   // lobby sockets
-  socket.on("rqst_rooms", () => {
-    Logger.respLog(
-      "resp_rooms",
-      "rooms length: " + Lobby.rooms.length,
-      "success"
-    );
-    socket.emit("resp_rooms", Lobby.getRooms());
-  });
+  socket.on("rqst_rooms", () => socket.emit("resp_rooms", Lobby.getRooms()));
   socket.on("rqst_room_enter", data => Lobby.enter(data, socket, io));
-  socket.on("rqst_room_leave", () => Lobby.leave(socket, io));
 
   // room client sockets
+  socket.on("rqst_room_leave", () => Lobby.leave(socket, io));
   socket.on("rqst_ingame_userlist", () => Lobby.getUserList(socket));
   socket.on("rqst_ingame_userinfo", data => Lobby.getUserInfo(data, socket));
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));
@@ -68,7 +54,7 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_standupcancel", () => Lobby.standUpCancel(socket, io));
   socket.on("rqst_ingame_leavecancel", () => Lobby.leaveCancel(socket, io));
 
-  // room server sockets
+  // game sockets
   socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
   socket.on("sresp_ingame_deal", () => Lobby.confirm("deal", socket, io));
   socket.on("sresp_ingame_player_action", data =>
