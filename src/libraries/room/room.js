@@ -315,6 +315,8 @@ class Room {
         this.losers = [];
         this.revealed = [];
         this.coins = {};
+        this.totalDraws = 0;
+        this.deals = {};
         this.deck = newDeck();
         this.players.forEach((p) => {
             if (typeof p !== "undefined") {
@@ -461,7 +463,6 @@ class Room {
         this.actions.push({ sid: user.sid, action: data.action });
 
         if (this.checkActions()) {
-            this.phaseIndex = 4;
             this.piggyback(
                 "srqst_ingame_player_action_update",
                 {
@@ -470,8 +471,7 @@ class Room {
                 io
             );
             this.actions = [];
-            if(this.totalDraws == 0)
-                this.nextPhase(io);
+            if (this.totalDraws == 0) this.nextPhase(io);
         }
     }
 
@@ -711,7 +711,7 @@ class Room {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
 
-        console.log(user.sid)
+        console.log(user.sid);
         if (this.phaseIndex === 2 && this.deals[user.sid] < 1)
             this.deals[user.sid]++;
         else if (this.phaseIndex === 3 && this.deals[user.sid] < 2)
