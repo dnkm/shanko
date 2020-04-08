@@ -804,7 +804,7 @@ class Room {
     filterLobby() {
         let cnt = this.playerCnt();
         let status =
-            this.phaseIndex !== 0 || this.phaseIndex !== 6
+            this.phaseIndex !== 0 && this.phaseIndex !== 6
                 ? "playing"
                 : cnt === 0
                 ? "open"
