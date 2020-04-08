@@ -710,16 +710,15 @@ class Room {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
 
-        console.log("---");
-        console.log(this.deals);
-        if (this.phaseIndex === 2 && this.deals[user.sid] < 2)
+        console.log(user.sid)
+        if (this.phaseIndex === 2 && this.deals[user.sid] < 1)
             this.deals[user.sid]++;
-        else if (this.phaseIndex === 3 && this.deals[user.sid] < 3)
+        else if (this.phaseIndex === 3 && this.deals[user.sid] < 2)
             this.deals[user.sid]++;
         else if (
             this.phaseIndex === 4 &&
             user.sid === this.bankerIndex &&
-            this.deals[user.sid] < 3
+            this.deals[user.sid] < 2
         ) {
             this.nextPhase(io);
             return;
@@ -732,8 +731,8 @@ class Room {
     syncDeals() {
         let cnt = 0;
         Object.keys(this.deals).forEach((sid) => {
-            if (this.phaseIndex === 2 && this.deals[sid] === 2) cnt++;
-            if (this.phaseIndex === 3 && this.deals[sid] === 3) cnt++;
+            if (this.phaseIndex === 2 && this.deals[sid] === 1) cnt++;
+            if (this.phaseIndex === 3 && this.deals[sid] === 2) cnt++;
         });
 
         if (this.phaseIndex === 2 && cnt === this.playerCnt()) return true;
