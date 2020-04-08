@@ -66,6 +66,8 @@ class Room {
         this.bankerQueue = [];
         this.deposit = true;
         this.actions = [];
+        this.deals = {};
+        this.draws = 0;
         this.sorted = [];
         this.betTotal = 0;
         this.reserved = 0;
@@ -318,6 +320,7 @@ class Room {
             if (typeof p !== "undefined") {
                 p.isActive = true;
                 p.cards = [];
+                this.deals[p.sid] = 0;
                 p.bet = 0;
                 let user = Users.getUser(p.sid);
                 user.playing = true;
@@ -451,7 +454,10 @@ class Room {
             this.checkAction(user.sid)
         )
             return;
-        if (data.action === "draw") this.players[p].cards.push(this.deck.pop());
+        if (data.action === "draw") {
+            this.players[p].cards.push(this.deck.pop());
+            this.totalDraws++;
+        }
         this.actions.push({ sid: user.sid, action: data.action });
 
         if (this.checkActions()) {
@@ -531,8 +537,8 @@ class Room {
                     },
                     io
                 );
+                this.nextPhase(io);
             }
-            this.nextPhase(io);
         }
     }
 
@@ -697,6 +703,38 @@ class Room {
             let a = this.actions[i];
             if (a.sid === player.sid) return true;
         }
+        return false;
+    }
+
+    confirmDeal(user, io) {
+        let p = this.findPlayer(user.sid);
+        if (p === -1) return;
+
+        if (this.phaseIndex === 2 && this.deals[user.sid] < 2)
+            this.deals[user.sid]++;
+        else if (this.phaseIndex === 3 && this.deals[user.sid] < 3)
+            this.deals[user.sid]++;
+        else if (
+            this.phaseIndex === 4 &&
+            user.sid === this.bankerIndex &&
+            this.deals[user.sid] < 3
+        ) {
+            this.nextPhase(io);
+            return;
+        }
+
+        if (syncDeals()) this.nextPhase(io);
+    }
+
+    syncDeals() {
+        let cnt = 0;
+        Object.keys(this.deals).forEach((sid) => {
+            if (this.phaseIndex === 2 && this.deals[sid] === 2) cnt++;
+            if (this.phaseIndex === 3 && this.deals[sid] === 3) cnt++;
+        });
+
+        if (this.phaseIndex === 2 && cnt === this.playerCnt()) return true;
+        if (this.phaseIndex === 3 && cnt === this.totalDraws) return true;
         return false;
     }
 
