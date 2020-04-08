@@ -805,7 +805,7 @@ class Room {
         let cnt = this.playerCnt();
         let status =
             this.phaseIndex !== 0 && this.phaseIndex !== 6
-                ? "playing"
+                ? "running"
                 : cnt === 0
                 ? "open"
                 : cnt === 8
