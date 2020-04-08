@@ -710,6 +710,8 @@ class Room {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
 
+        console.log("---");
+        console.log(this.deals);
         if (this.phaseIndex === 2 && this.deals[user.sid] < 2)
             this.deals[user.sid]++;
         else if (this.phaseIndex === 3 && this.deals[user.sid] < 3)
@@ -722,6 +724,7 @@ class Room {
             this.nextPhase(io);
             return;
         }
+        console.log(this.deals);
 
         if (syncDeals()) this.nextPhase(io);
     }
