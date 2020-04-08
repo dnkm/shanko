@@ -726,7 +726,7 @@ class Room {
         }
         console.log(this.deals);
 
-        if (syncDeals()) this.nextPhase(io);
+        if (this.syncDeals()) this.nextPhase(io);
     }
 
     syncDeals() {
