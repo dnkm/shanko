@@ -470,7 +470,8 @@ class Room {
                 io
             );
             this.actions = [];
-            this.nextPhase(io);
+            if(this.totalDraws == 0)
+                this.nextPhase(io);
         }
     }
 
