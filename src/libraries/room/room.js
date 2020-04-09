@@ -519,7 +519,6 @@ class Room {
             if (data === "draw") {
                 let p = this.findPlayer(this.bankerIndex);
                 this.players[p].cards.push(this.deck.pop());
-                this.phaseIndex = 6;
                 this.piggyback(
                     "srqst_ingame_banker_action_update",
                     {
@@ -529,7 +528,6 @@ class Room {
                     io
                 );
             } else {
-                this.phaseIndex = 6;
                 this.piggyback(
                     "srqst_ingame_banker_action_update",
                     {
@@ -538,8 +536,8 @@ class Room {
                     },
                     io
                 );
-                this.nextPhase(io);
             }
+            this.nextPhase(io);
         }
     }
 
@@ -711,6 +709,7 @@ class Room {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
 
+        console.log();
         console.log(user.sid);
         if (this.phaseIndex === 2 && this.deals[user.sid] < 1)
             this.deals[user.sid]++;
@@ -725,6 +724,7 @@ class Room {
             return;
         }
         console.log(this.deals);
+        console.log(this.totalDraws);
 
         if (this.syncDeals()) this.nextPhase(io);
     }
