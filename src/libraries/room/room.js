@@ -376,7 +376,7 @@ class Room {
         });
         this.standers = [];
 
-        if (this.playersCnt() < 3) return;
+        if (this.playerCnt() < 3) return;
 
         this.phaseIndex = 0;
         console.log("---start---");
