@@ -536,8 +536,8 @@ class Room {
                     },
                     io
                 );
+                this.nextPhase(io);
             }
-            this.nextPhase(io);
         }
     }
 
