@@ -604,13 +604,14 @@ class Room {
             Users.changeCash(u, this.bank);
             this.players[b].balance += this.bank;
             resultplayers.push({
-                sid: b,
+                sid: u.sid,
                 balanceBefore: this.players[b].balance - this.bank,
                 balanceAfter: this.players[b].balance,
                 winAmt: this.bank,
             });
             this.bank = 0;
         }
+        console.log(resultplayers);
 
         setTimeout(() => {
             this.leavers.forEach((leaver) => {
