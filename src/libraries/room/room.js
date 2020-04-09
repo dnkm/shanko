@@ -237,6 +237,13 @@ class Room {
             socket.emit("resp_room_leave", {
                 retcode: 0,
             });
+            socket.emit("srqst_room_leave", {
+                sid: user.sid,
+                roomnumber: this.roomnumber,
+            });
+            user.room = undefined;
+            user.inroom = false;
+            user.playing = false;
             return;
         }
 
