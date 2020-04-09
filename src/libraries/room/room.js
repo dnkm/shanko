@@ -230,7 +230,6 @@ class Room {
     }
 
     leave(user, socket, io) {
-        console.log(1);
         // spectator leave
         if (this.spectators.includes(user.sid)) {
             this.spectators = this.spectators.filter((s) => s !== user.sid);
@@ -256,7 +255,6 @@ class Room {
             user.playing = false;
             return;
         }
-        console.log(2);
         // player leave
         let p = this.findPlayer(user.sid);
         if (p !== -1) {
@@ -284,7 +282,6 @@ class Room {
                 user.inroom = false;
                 return;
             }
-            console.log(3);
             // attempting to leave if banker and bank is not empty
             // or if playing phase is active
             if (user.sid === this.bankerIndex && this.bank !== 0) {
@@ -308,7 +305,6 @@ class Room {
                 socket.emit("resp_room_leave", { retcode: 1 });
                 return;
             }
-            console.log(4);
             socket.emit("resp_room_leave", {
                 retcode: 0,
             });
@@ -334,7 +330,6 @@ class Room {
                 user.inroom = false;
                 Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
             } else this.leavers.push({ sid: user.sid, socket });
-            console.log(this.leavers);
         }
     }
 
@@ -346,7 +341,6 @@ class Room {
     }
 
     start(io) {
-        console.log(this.leavers);
         this.leavers.forEach((leaver) => {
             let sid = leaver.sid;
             let socket = leaver.socket;
@@ -365,7 +359,7 @@ class Room {
             );
             user.room = undefined;
             user.inroom = false;
-            unser.playing = false;
+            user.playing = false;
             this.players[p] = undefined;
         });
         this.leavers = [];
@@ -381,6 +375,8 @@ class Room {
             this.piggyback("srqst_ingame_standup", { seatIndex: si }, io);
         });
         this.standers = [];
+
+        if (this.playersCnt() < 3) return;
 
         this.phaseIndex = 0;
         console.log("---start---");
