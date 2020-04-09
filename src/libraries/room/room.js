@@ -333,6 +333,7 @@ class Room {
                 user.inroom = false;
                 Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
             } else this.leavers.push({ sid: user.sid, socket });
+            console.log(this.leavers);
         }
     }
 
@@ -344,6 +345,7 @@ class Room {
     }
 
     start(io) {
+        console.log(this.leavers);
         this.leavers.forEach((leaver) => {
             let sid = leaver.sid;
             let socket = leaver.socket;
@@ -361,6 +363,8 @@ class Room {
                 io
             );
             user.room = undefined;
+            user.inroom = false;
+            unser.playing = false;
             this.players[p] = undefined;
         });
         this.leavers = [];
