@@ -186,6 +186,15 @@ class Room {
                 (user.sid === this.bankerIndex && this.bank !== 0) ||
                 (this.phaseIndex !== 0 && this.phaseIndex !== 6)
             ) {
+                if (this.playerCnt() === 1) {
+                    socket.emit("resp_ingame_standup", { retcode: 0 });
+                    this.piggyback(
+                        "srqst_ingame_standup",
+                        { seatIndex: si },
+                        io
+                    );
+                    return;
+                }
                 socket.emit("resp_ingame_standup", {
                     retcode: 1,
                 });
@@ -265,6 +274,19 @@ class Room {
                 (user.sid === this.bankerIndex && this.bank !== 0) ||
                 (this.phaseIndex !== 0 && this.phaseIndex !== 6)
             ) {
+                if (this.playerCnt() === 1) {
+                    socket.emit("resp_room_leave", { retcode: 0 });
+                    this.piggyback(
+                        "resp_room_leave",
+                        {
+                            retcode: 0,
+                            sid: user.sid,
+                            roomnumber: this.roomnumber,
+                        },
+                        io
+                    );
+                    return;
+                }
                 socket.emit("resp_room_leave", { retcode: 1 });
                 return;
             }
