@@ -241,6 +241,12 @@ class Room {
                 sid: user.sid,
                 roomnumber: this.roomnumber,
             });
+            Logger.respLog("resp_room_leave", {}, "success");
+            Logger.respLog("srqst_room_leave", {
+                sid: user.sid,
+                roomnumber: this.roomnumber,
+            }, "success");
+            console.log(1);
             user.room = undefined;
             user.inroom = false;
             user.playing = false;
