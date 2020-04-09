@@ -745,7 +745,8 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         if (p !== -1) this.players[p].lastConfirmedAnimation = data;
-        if (this.sync() && this.totalDraws === 0) this.nextPhase(io);
+        if (this.phaseIndex === 3 && this.totalDraws > 0) return;
+        if (this.sync()) this.nextPhase(io);
     }
 
     sync() {
