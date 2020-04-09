@@ -716,7 +716,7 @@ class Room {
         else if (this.phaseIndex === 3 && this.deals[user.sid] < 2)
             this.deals[user.sid]++;
         else if (
-            this.phaseIndex === 4 &&
+            this.phaseIndex === 5 &&
             user.sid === this.bankerIndex &&
             this.deals[user.sid] < 2
         ) {
