@@ -254,7 +254,7 @@ class Room {
                     retcode: 0,
                 });
                 this.piggyback(
-                    "resp_room_leave",
+                    "srqst_room_leave",
                     {
                         sid: user.sid,
                         roomnumber: this.roomnumber,
