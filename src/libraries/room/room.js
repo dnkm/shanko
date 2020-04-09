@@ -180,6 +180,7 @@ class Room {
                 socket.join(this.roomnumber);
                 socket.emit("resp_ingame_standup", { retcode: 0 });
                 this.piggyback("srqst_ingame_standup", { seatIndex: si }, io);
+                user.playing = false;
                 return;
             }
             if (
@@ -187,12 +188,16 @@ class Room {
                 (this.phaseIndex !== 0 && this.phaseIndex !== 6)
             ) {
                 if (this.playerCnt() === 1) {
+                    let b = this.findPlayer(user.sid);
+                    this.spectators.push(user.sid);
+                    this.players[b] = undefined;
                     socket.emit("resp_ingame_standup", { retcode: 0 });
                     this.piggyback(
                         "srqst_ingame_standup",
                         { seatIndex: si },
                         io
                     );
+                    user.playing = false;
                     return;
                 }
                 socket.emit("resp_ingame_standup", {
@@ -201,7 +206,6 @@ class Room {
                 return;
             }
             if (this.phaseIndex === 0 || this.phaseIndex === 6) {
-                user.playing = false;
                 this.players[si] = undefined;
                 this.spectators.push(user.sid);
                 if (this.bankerIndex === user.sid) this.nextBanker();
@@ -211,6 +215,7 @@ class Room {
                 socket.join(this.roomnumber);
                 socket.emit("resp_ingame_standup", { retcode: 0 });
                 this.piggyback("srqst_ingame_standup", { seatIndex: si }, io);
+                user.playing = false;
             } else {
                 this.standers.push({ sid: user.sid, socket });
             }
@@ -231,8 +236,6 @@ class Room {
             socket.leave(this.roomnumber);
             socket.emit("resp_room_leave", {
                 retcode: 0,
-                sid: user.sid,
-                roomnumber: this.roomnumber,
             });
             return;
         }
@@ -242,29 +245,26 @@ class Room {
         if (p !== -1) {
             // not active player leave
             if (!this.players[p].isActive) {
-                user.room = undefined;
-                user.inroom = false;
                 if (this.bankerIndex === user.sid) this.nextBanker();
                 this.bankerQueue = this.bankerQueue.filter(
                     (b) => b !== user.sid
                 );
-                this.players[p] = undefined;
                 socket.leave(this.roomnumber);
+                socket.emit("resp_room_leave", {
+                    retcode: 0,
+                });
                 this.piggyback(
                     "resp_room_leave",
                     {
-                        retcode: 0,
                         sid: user.sid,
                         roomnumber: this.roomnumber,
                     },
                     io
                 );
-                socket.emit("resp_room_leave", {
-                    retcode: 0,
-                    sid: user.sid,
-                    roomnumber: this.roomnumber,
-                });
-                Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
+                this.players[p] = undefined;
+                user.room = undefined;
+                user.playing = false;
+                user.inroom = false;
                 return;
             }
 
@@ -275,47 +275,49 @@ class Room {
                 (this.phaseIndex !== 0 && this.phaseIndex !== 6)
             ) {
                 if (this.playerCnt() === 1) {
+                    let b = this.findPlayer(this.bankerIndex);
                     socket.emit("resp_room_leave", { retcode: 0 });
                     this.piggyback(
-                        "resp_room_leave",
+                        "srqst_room_leave",
                         {
-                            retcode: 0,
                             sid: user.sid,
                             roomnumber: this.roomnumber,
                         },
                         io
                     );
+                    this.players[b] = 0;
+                    user.room = undefined;
+                    user.playing = false;
+                    user.inroom = false;
                     return;
                 }
                 socket.emit("resp_room_leave", { retcode: 1 });
                 return;
             }
 
+            socket.emit("resp_room_leave", {
+                retcode: 0,
+            });
             // leaving during phase 0 or phase 6
             if (this.phaseIndex === 0 || this.phaseIndex === 6) {
-                user.room = undefined;
-                user.playing = false;
-                user.inroom = false;
                 if (this.bankerIndex === user.sid) this.nextBanker();
                 this.bankerQueue = this.bankerQueue.filter(
                     (b) => b !== user.sid
                 );
-                this.players[p] = undefined;
                 socket.leave(this.roomnumber);
                 this.piggyback(
-                    "resp_room_leave",
+                    "srqst_room_leave",
                     {
-                        retcode: 0,
                         sid: user.sid,
                         roomnumber: this.roomnumber,
                     },
                     io
                 );
-                socket.emit("resp_room_leave", {
-                    retcode: 0,
-                    sid: user.sid,
-                    roomnumber: this.roomnumber,
-                });
+
+                this.players[p] = undefined;
+                user.room = undefined;
+                user.playing = false;
+                user.inroom = false;
                 Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
             } else this.leavers.push({ sid: user.sid, socket });
         }
@@ -329,6 +331,39 @@ class Room {
     }
 
     start(io) {
+        this.leavers.forEach((leaver) => {
+            let sid = leaver.sid;
+            let socket = leaver.socket;
+            let p = this.findPlayer(sid);
+            let user = Users.getUser(sid);
+            if (this.bankerIndex === sid) this.nextBanker();
+            this.bankerQueue = this.bankerQueue.filter((b) => b !== user.sid);
+            socket.leave(this.roomnumber);
+            this.piggyback(
+                "srqst_room_leave",
+                {
+                    sid: user.sid,
+                    roomnumber: this.roomnumber,
+                },
+                io
+            );
+            user.room = undefined;
+            this.players[p] = undefined;
+        });
+        this.leavers = [];
+        this.standers.forEach((stander) => {
+            let sid = stander.sid;
+            let si = this.findPlayer(sid);
+            let socket = stander.socket;
+            this.players[si] = undefined;
+            this.spectators.push(sid);
+            if (this.bankerIndex === sid) this.nextBanker();
+            this.bankerQueue = this.bankerQueue.filter((b) => b !== sid);
+            socket.join(this.roomnumber);
+            this.piggyback("srqst_ingame_standup", { seatIndex: si }, io);
+        });
+        this.standers = [];
+
         this.phaseIndex = 0;
         console.log("---start---");
         this.nextPhase = this.betting;
@@ -629,55 +664,6 @@ class Room {
             });
             this.bank = 0;
         }
-        console.log(resultplayers);
-
-        setTimeout(() => {
-            this.leavers.forEach((leaver) => {
-                let sid = leaver.sid;
-                let socket = leaver.socket;
-                let p = this.findPlayer(sid);
-                let user = Users.getUser(sid);
-                user.room = undefined;
-                if (this.bankerIndex === sid) this.nextBanker();
-                this.bankerQueue = this.bankerQueue.filter(
-                    (b) => b !== user.sid
-                );
-                this.players[p] = undefined;
-                socket.leave(this.roomnumber);
-                this.piggyback(
-                    "resp_room_leave",
-                    {
-                        retcode: 0,
-                        sid: user.sid,
-                        roomnumber: this.roomnumber,
-                    },
-                    io
-                );
-                socket.emit("resp_room_leave", {
-                    retcode: 0,
-                    sid: user.sid,
-                    roomnumber: this.roomnumber,
-                });
-                Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
-            });
-            this.leavers = [];
-
-            this.standers.forEach((stander) => {
-                let sid = stander.sid;
-                let si = this.findPlayer(sid);
-                let socket = stander.socket;
-                this.players[si] = undefined;
-                this.spectators.push(sid);
-                if (this.bankerIndex === sid) this.nextBanker();
-                this.bankerQueue = this.bankerQueue.filter((b) => b !== sid);
-                socket.join(this.roomnumber);
-                socket.emit("resp_ingame_standup", { retcode: 0 });
-                this.piggyback("srqst_ingame_standup", { seatIndex: si }, io);
-            });
-            this.standers = [];
-        }, 5000);
-
-        console.log(resultplayers);
         this.piggyback("srqst_ingame_result", { resultplayers }, io);
         if (this.bank >= this.minimumbank * 3 && this.warning === -1)
             this.warning = 1;
