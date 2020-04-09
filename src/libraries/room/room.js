@@ -230,6 +230,7 @@ class Room {
     }
 
     leave(user, socket, io) {
+        console.log(1);
         // spectator leave
         if (this.spectators.includes(user.sid)) {
             this.spectators = this.spectators.filter((s) => s !== user.sid);
@@ -246,13 +247,12 @@ class Room {
                 sid: user.sid,
                 roomnumber: this.roomnumber,
             }, "success");
-            console.log(1);
             user.room = undefined;
             user.inroom = false;
             user.playing = false;
             return;
         }
-
+        console.log(2);
         // player leave
         let p = this.findPlayer(user.sid);
         if (p !== -1) {
@@ -280,7 +280,7 @@ class Room {
                 user.inroom = false;
                 return;
             }
-
+            console.log(3);
             // attempting to leave if banker and bank is not empty
             // or if playing phase is active
             if (
@@ -307,7 +307,7 @@ class Room {
                 socket.emit("resp_room_leave", { retcode: 1 });
                 return;
             }
-
+            console.log(4);
             socket.emit("resp_room_leave", {
                 retcode: 0,
             });
