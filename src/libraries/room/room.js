@@ -243,10 +243,14 @@ class Room {
                 roomnumber: this.roomnumber,
             });
             Logger.respLog("resp_room_leave", {}, "success");
-            Logger.respLog("srqst_room_leave", {
-                sid: user.sid,
-                roomnumber: this.roomnumber,
-            }, "success");
+            Logger.respLog(
+                "srqst_room_leave",
+                {
+                    sid: user.sid,
+                    roomnumber: this.roomnumber,
+                },
+                "success"
+            );
             user.room = undefined;
             user.inroom = false;
             user.playing = false;
@@ -283,10 +287,7 @@ class Room {
             console.log(3);
             // attempting to leave if banker and bank is not empty
             // or if playing phase is active
-            if (
-                (user.sid === this.bankerIndex && this.bank !== 0) ||
-                (this.phaseIndex !== 0 && this.phaseIndex !== 6)
-            ) {
+            if (user.sid === this.bankerIndex && this.bank !== 0) {
                 if (this.playerCnt() === 1) {
                     let b = this.findPlayer(this.bankerIndex);
                     socket.emit("resp_room_leave", { retcode: 0 });
