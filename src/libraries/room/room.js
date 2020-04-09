@@ -594,11 +594,7 @@ class Room {
             p.balance += winAmt;
         });
 
-        if (this.bank >= this.minimumbank * 3 && this.warning === -1)
-            this.warning = 1;
-        else if (this.warning !== -1 && this.warning < 3 && this.bank > 0)
-            this.warning++;
-        else if (this.warning === 3) {
+        if (this.warning === 3) {
             let b = this.findPlayer(this.bankerIndex);
             let u = Users.getUser(this.bankerIndex);
             Users.changeCash(u, this.bank);
@@ -661,6 +657,10 @@ class Room {
 
         console.log(resultplayers);
         this.piggyback("srqst_ingame_result", { resultplayers }, io);
+        if (this.bank >= this.minimumbank * 3 && this.warning === -1)
+            this.warning = 1;
+        else if (this.warning !== -1 && this.warning < 3 && this.bank > 0)
+            this.warning++;
         if (this.bank <= 0) this.nextBanker();
     }
 
