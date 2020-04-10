@@ -44,7 +44,7 @@ io.on("connection", socket => {
   socket.on("rqst_room_enter", data => Lobby.enter(data, socket, io));
 
   // room client sockets
-  socket.on("rqst_room_leave", () => Lobby.leave(socket, io));
+  socket.on("rqst_ingame_leave", () => Lobby.leave(socket, io));
   socket.on("rqst_ingame_userlist", () => Lobby.getUserList(socket));
   socket.on("rqst_ingame_userinfo", data => Lobby.getUserInfo(data, socket));
   socket.on("rqst_ingame_state", () => Lobby.getState(socket));

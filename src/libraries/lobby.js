@@ -79,11 +79,11 @@ class Lobby {
             return;
         }
         Logger.respLog(
-            "resp_room_leave",
+            "resp_ingame_leave",
             { retcode: 2 },
             "user or room not found"
         );
-        socket.emit("resp_room_leave", { retcode: 2 });
+        socket.emit("resp_ingame_leave", { retcode: 2 });
     }
 
     cancelLeave(socket, io) {

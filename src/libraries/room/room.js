@@ -234,16 +234,16 @@ class Room {
         if (this.spectators.includes(user.sid)) {
             this.spectators = this.spectators.filter((s) => s !== user.sid);
             socket.leave(this.roomnumber);
-            socket.emit("resp_room_leave", {
+            socket.emit("resp_ingame_leave", {
                 retcode: 0,
             });
-            socket.emit("srqst_room_leave", {
+            socket.emit("srqst_ingame_leave", {
                 sid: user.sid,
                 roomnumber: this.roomnumber,
             });
-            Logger.respLog("resp_room_leave", {}, "success");
+            Logger.respLog("resp_ingame_leave", {}, "success");
             Logger.respLog(
-                "srqst_room_leave",
+                "srqst_ingame_leave",
                 {
                     sid: user.sid,
                     roomnumber: this.roomnumber,
@@ -265,11 +265,11 @@ class Room {
                     (b) => b !== user.sid
                 );
                 socket.leave(this.roomnumber);
-                socket.emit("resp_room_leave", {
+                socket.emit("resp_ingame_leave", {
                     retcode: 0,
                 });
                 this.piggyback(
-                    "srqst_room_leave",
+                    "srqst_ingame_leave",
                     {
                         sid: user.sid,
                         roomnumber: this.roomnumber,
@@ -287,9 +287,9 @@ class Room {
             if (user.sid === this.bankerIndex && this.bank !== 0) {
                 if (this.playerCnt() === 1) {
                     let b = this.findPlayer(this.bankerIndex);
-                    socket.emit("resp_room_leave", { retcode: 0 });
+                    socket.emit("resp_ingame_leave", { retcode: 0 });
                     this.piggyback(
-                        "srqst_room_leave",
+                        "srqst_ingame_leave",
                         {
                             sid: user.sid,
                             roomnumber: this.roomnumber,
@@ -302,10 +302,10 @@ class Room {
                     user.inroom = false;
                     return;
                 }
-                socket.emit("resp_room_leave", { retcode: 1 });
+                socket.emit("resp_ingame_leave", { retcode: 1 });
                 return;
             }
-            socket.emit("resp_room_leave", {
+            socket.emit("resp_ingame_leave", {
                 retcode: 0,
             });
             // leaving during phase 0 or phase 6
@@ -316,7 +316,7 @@ class Room {
                 );
                 socket.leave(this.roomnumber);
                 this.piggyback(
-                    "srqst_room_leave",
+                    "srqst_ingame_leave",
                     {
                         sid: user.sid,
                         roomnumber: this.roomnumber,
@@ -328,7 +328,7 @@ class Room {
                 user.room = undefined;
                 user.playing = false;
                 user.inroom = false;
-                Logger.respLog("resp_room_leave", { retcode: 0 }, "success");
+                Logger.respLog("resp_ingame_leave", { retcode: 0 }, "success");
             } else this.leavers.push({ sid: user.sid, socket });
         }
     }
@@ -350,7 +350,7 @@ class Room {
             this.bankerQueue = this.bankerQueue.filter((b) => b !== user.sid);
             socket.leave(this.roomnumber);
             this.piggyback(
-                "srqst_room_leave",
+                "srqst_ingame_leave",
                 {
                     sid: user.sid,
                     roomnumber: this.roomnumber,
