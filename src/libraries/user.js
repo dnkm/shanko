@@ -26,9 +26,31 @@ let userbase = {
   },
   daniel: {
     id: "daniel",
-    sid: 3,
+    sid: 30,
     password: "0000",
     nickname: "dnkm",
+    gender: 0,
+    cash: 100000,
+    imgnumber: 1,
+    win: 50,
+    lose: 40
+  },
+  daniel2: {
+    id: "daniel2",
+    sid: 31,
+    password: "0000",
+    nickname: "dnkm2",
+    gender: 0,
+    cash: 100000,
+    imgnumber: 1,
+    win: 50,
+    lose: 40
+  },
+  daniel3: {
+    id: "daniel3",
+    sid: 32,
+    password: "0000",
+    nickname: "dnkm3",
     gender: 0,
     cash: 100000,
     imgnumber: 1,
