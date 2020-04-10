@@ -15,9 +15,31 @@ let userbase = {
   },
   jay: {
     id: "jay",
-    sid: 1,
+    sid: 40,
     password: "0000",
-    nickname: "satisfiedlemon",
+    nickname: "jay",
+    gender: 0,
+    cash: 250000,
+    imgnumber: 3,
+    win: 50,
+    lose: 40
+  },
+  jay: {
+    id: "jay2",
+    sid: 41,
+    password: "0000",
+    nickname: "jay2",
+    gender: 0,
+    cash: 250000,
+    imgnumber: 3,
+    win: 50,
+    lose: 40
+  },
+  jay: {
+    id: "jay3",
+    sid: 42,
+    password: "0000",
+    nickname: "jay3",
     gender: 0,
     cash: 250000,
     imgnumber: 3,
