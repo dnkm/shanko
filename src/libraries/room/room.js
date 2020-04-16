@@ -159,7 +159,7 @@ class Room {
                 io
             );
         }
-        if (this.playerCnt() === 3) this.nextPhase(io);
+        if (this.seatedPlayers() === 3) this.nextPhase(io);
     }
 
     leave(user, socket, io) {
