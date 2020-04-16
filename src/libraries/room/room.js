@@ -207,7 +207,7 @@ class Room {
         }
 
         // banker logic
-        if (this.bankerIndex === player.sid && this.playerCnt() !== 1) return;
+        if (this.bankerIndex === player.sid && this.playerCnt() > 1) return;
         // player logic
         if (this.bankerIndex === user.sid) this.nextBanker();
         this.bankerQueue = this.bankerQueue.filter((b) => b !== user.sid);
