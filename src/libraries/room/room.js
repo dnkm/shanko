@@ -515,23 +515,17 @@ class Room {
         sorted.forEach((p) => {
             console.log("---", p.sid, "---")
             let result = this.cardsValue(p.cards).multiplier;
-            console.log("result: ", result);
             if (result === -1) result = 1;
             let winAmt = p.bet * result;
-            console.log("winAmt initial: ", winAmt);
-            console.log("reserved before: ", reserved);
             reserved -= p.bet;
-            console.log("reserved after: ", reserved);
-            if (winAmt > this.bank - reserved) winAmt = this.bank - reserved;
-            console.log("winAmt before: ", winAmt);
-            console.log("fees before: ", this.fees);
             let fee = winAmt - Math.ceil(winAmt * 0.95);
-            this.fees += fee;
-            console.log("fees after: ", this.fees);
-            winAmt -= fee;
-            console.log("winAmt after: ", winAmt);
             winAmt += p.bet;
-            console.log("winAmt after 2: ", winAmt);
+            if (winAmt > this.bank - reserved) {
+                winAmt = this.bank - reserved;
+                fee = 0;
+            }
+            this.fees += fee;
+            winAmt -= fee;
             resultplayers.push({
                 sid: p.sid,
                 result,
