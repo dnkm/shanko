@@ -573,7 +573,7 @@ class Room {
             this.players[next].banker = true;
             this.bankerIndex = this.players[next].sid;
         } else this.bankerIndex = -1;
-
+        this.warning = -1;
         this.deposit = true;
     }
 
