@@ -12,7 +12,6 @@ class Player {
     this.cards = [];
     this.bet = 0;
     this.isActive = false;
-    this.inactive = false;
   }
 }
 

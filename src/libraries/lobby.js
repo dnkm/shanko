@@ -58,7 +58,7 @@ class Lobby {
 
     ready(socket, io) {
         let user = Users.getUser(socket.id);
-        if (typeof user !== "undefined" && user.inroom && user.room) {
+        if (typeof user !== "undefined" && user.room) {
             let room = this.findRoom(user.room);
             this.rooms[room].ready(user, socket, io);
             return;
@@ -108,36 +108,6 @@ class Lobby {
             "user or room not found"
         );
         socket.emit("resp_ingame_sit", { retcode: 2 });
-    }
-
-    standUp(socket, io) {
-        let user = Users.getUser(socket.id);
-        if (user && user.room) {
-            let room = this.findRoom(user.room);
-            this.rooms[room].standUp(user, socket, io);
-            return;
-        }
-        Logger.respLog(
-            "resp_ingame_standup",
-            { retcode: 2 },
-            "user or room not found"
-        );
-        socket.emit("resp_ingame_standup", { retcode: 2 });
-    }
-
-    standUpCancel(socket, io) {
-        let user = Users.getUser(socket.id);
-        if (user && user.room) {
-            let room = this.findRoom(user.room);
-            this.rooms[room].standUpCancel(user, socket, io);
-            return;
-        }
-        Logger.respLog(
-            "resp_ingame_standup",
-            { retcode: 2 },
-            "user or room not found"
-        );
-        socket.emit("resp_ingame_standupcancel", { retcode: 2 });
     }
 
     findRoom(room) {
@@ -230,7 +200,7 @@ class Lobby {
     }
     getState(socket) {
         let user = Users.getUser(socket.id);
-        if (typeof user !== "undefined" && user.room && user.inroom) {
+        if (typeof user !== "undefined" && user.room) {
             let room = this.findRoom(user.room);
             Logger.respLog(
                 "resp_ingame_state",

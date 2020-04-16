@@ -115,6 +115,7 @@ class User {
     this.win = userbase[data.id].win;
     this.lose = userbase[data.id].lose;
     this.room = undefined;
+    this.playing = false;
   }
 }
 
