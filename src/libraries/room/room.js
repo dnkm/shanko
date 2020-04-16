@@ -521,7 +521,7 @@ class Room {
             console.log("winAmt initial: ", winAmt);
             console.log("reserved before: ", reserved);
             reserved -= p.bet;
-            console.log("reserved after: ", reserveed);
+            console.log("reserved after: ", reserved);
             if (winAmt > this.bank - reserved) winAmt = this.bank - reserved;
             console.log("winAmt before: ", winAmt);
             console.log("fees before: ", this.fees);
