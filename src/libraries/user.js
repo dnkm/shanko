@@ -13,22 +13,33 @@ let userbase = {
     win: 50,
     lose: 40
   },
-  jay: {
-    id: "jay",
-    sid: 1,
+  daniel: {
+    id: "daniel",
+    sid: 30,
     password: "0000",
-    nickname: "satisfiedlemon",
+    nickname: "dnkm",
     gender: 0,
-    cash: 250000,
-    imgnumber: 3,
+    cash: 100000,
+    imgnumber: 1,
     win: 50,
     lose: 40
   },
-  daniel: {
-    id: "daniel",
-    sid: 3,
+  daniel2: {
+    id: "daniel2",
+    sid: 31,
     password: "0000",
-    nickname: "dnkm",
+    nickname: "dnkm2",
+    gender: 0,
+    cash: 100000,
+    imgnumber: 1,
+    win: 50,
+    lose: 40
+  },
+  daniel3: {
+    id: "daniel3",
+    sid: 32,
+    password: "0000",
+    nickname: "dnkm3",
     gender: 0,
     cash: 100000,
     imgnumber: 1,
@@ -57,8 +68,8 @@ let userbase = {
     win: 0,
     lose: 0
   },
-  guest1: {
-    id: "guest1",
+  test11: {
+    id: "test11",
     sid: 6,
     password: "0000",
     nickname: "beep",
@@ -68,8 +79,8 @@ let userbase = {
     win: 999,
     lose: 0
   },
-  guest2: {
-    id: "guest2",
+  test22: {
+    id: "test22",
     sid: 7,
     password: "0000",
     nickname: "boop",
