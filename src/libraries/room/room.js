@@ -541,13 +541,15 @@ class Room {
             let b = this.findPlayer(this.bankerIndex);
             let u = Users.getUser(this.bankerIndex);
             Users.changeCash(u, this.bank);
-            this.players[b].balance += this.bank;
+            let fee = Math.ceil(this.bank * 0.05);
+            this.bank -= fee;
             resultplayers.push({
                 sid: u.sid,
-                balanceBefore: this.players[b].balance - this.bank,
-                balanceAfter: this.players[b].balance,
+                balanceBefore: this.players[b].balance,
+                balanceAfter: this.players[b].balance + this.bank,
                 winAmt: this.bank,
             });
+            this.players[b].balance += this.bank;
             this.bank = 0;
         }
         this.piggyback("srqst_ingame_result", { resultplayers }, io);
