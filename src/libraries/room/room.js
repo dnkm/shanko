@@ -309,6 +309,7 @@ class Room {
         this.players[p].bet = bet;
         this.players[p].balance -= bet;
         this.betTotal += data.betAmount;
+        Users.changeCash(user, -bet);
         this.actions.push({
             sid: user.sid,
             betAmount: bet,
@@ -497,7 +498,6 @@ class Room {
                 this.bankerIndex !== p.sid &&
                 p.isActive
             ) {
-                let user = Users.getUser(p.sid);
                 delete p.lastConfirmedAnimation;
                 let result = this.result(p.cards);
                 if (result === -1 && !this.winners.includes(p.sid)) {
@@ -509,6 +509,16 @@ class Room {
                         balanceAfter: p.balance,
                         winAmt: 0,
                     });
+                    if (p.balance < this.minimumbank)
+                        this.bankerQueue = this.bankerQueue.filter(
+                            (sid) => sid !== p.sid
+                        );
+                    if (
+                        !this.bankerQueue.includes(p.sid) &&
+                        p.balance > this.minimumbank
+                    )
+                        this.bankerQueue.push(p.sid);
+                    console.log(this.bankerQueue);
                 } else if (!this.losers.includes(p.sid)) {
                     reserved += p.bet;
                     if (!this.winners.includes(p.sid)) this.winners.push(p.sid);
@@ -519,6 +529,7 @@ class Room {
         sorted = sorted.sort((a, b) => b.bet - a.bet);
         sorted.forEach((p) => {
             console.log("---", p.sid, "---");
+            let user = Users.getUser(p.sid);
             let result = this.cardsValue(p.cards).multiplier;
             if (result === -1) result = 1;
             let winAmt = p.bet * result;
@@ -540,6 +551,7 @@ class Room {
             });
             this.bank -= winAmt + fee;
             p.balance += winAmt;
+            Users.changeCash(user, winAmt);
             if (p.balance < this.minimumbank)
                 this.bankerQueue = this.bankerQueue.filter(
                     (sid) => sid !== p.sid
