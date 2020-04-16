@@ -262,6 +262,7 @@ class Room {
                 user.playing = true;
             }
         });
+        console.log(this.players);
         if (this.playerCnt() < 2) return;
 
         if (this.deposit) {
