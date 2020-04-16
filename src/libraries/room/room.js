@@ -241,7 +241,6 @@ class Room {
             else this.leave(leaver.player, leaver.socket, io);
         });
         if (bankerLeave) this.leave(bankerLeave.player, bankerLeave.socket, io);
-        if (this.playerCnt() < 2) return;
 
         console.log("---start---");
         this.nextPhase = this.betting;
@@ -263,6 +262,8 @@ class Room {
                 user.playing = true;
             }
         });
+        if (this.playerCnt() < 2) return;
+
         if (this.deposit) {
             let p = this.findPlayer(this.bankerIndex);
             this.warning = -1;
