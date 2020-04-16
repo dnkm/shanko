@@ -525,9 +525,10 @@ class Room {
             if (winAmt > this.bank - reserved) winAmt = this.bank - reserved;
             console.log("winAmt before: ", winAmt);
             console.log("fees before: ", this.fees);
-            this.fees += winAmt - Math.ceil(winAmt * 0.95);
+            let fee = winAmt - Math.ceil(winAmt * 0.95);
+            this.fees += fee;
             console.log("fees after: ", this.fees);
-            winAmt = Math.ceil(winAmt * 0.95);
+            winAmt -= fee;
             console.log("winAmt after: ", winAmt);
             winAmt += p.bet;
             console.log("winAmt after 2: ", winAmt);
@@ -538,7 +539,7 @@ class Room {
                 balanceAfter: p.balance + winAmt,
                 winAmt: winAmt,
             });
-            this.bank -= winAmt;
+            this.bank -= winAmt + fee;
             p.balance += winAmt;
         });
 
