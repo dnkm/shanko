@@ -220,7 +220,9 @@ class Room {
             },
             io
         );
-        this.leavers = this.leavers.filter(leaver => leaver.player.sid !== user.sid);
+        this.leavers = this.leavers.filter(
+            (leaver) => leaver.player.sid !== user.sid
+        );
         this.players[p] = undefined;
         user.room = undefined;
         user.playing = false;
@@ -263,7 +265,10 @@ class Room {
             }
         });
         console.log(this.players);
-        if (this.playerCnt() < 2) return;
+        if (this.playerCnt() < 2) {
+            this.nextPhase = this.start;
+            return;
+        }
 
         if (this.deposit) {
             let p = this.findPlayer(this.bankerIndex);
@@ -513,7 +518,7 @@ class Room {
         });
         sorted = sorted.sort((a, b) => b.bet - a.bet);
         sorted.forEach((p) => {
-            console.log("---", p.sid, "---")
+            console.log("---", p.sid, "---");
             let result = this.cardsValue(p.cards).multiplier;
             if (result === -1) result = 1;
             let winAmt = p.bet * result;
@@ -535,6 +540,16 @@ class Room {
             });
             this.bank -= winAmt + fee;
             p.balance += winAmt;
+            if (p.balance < this.minimumbank)
+                this.bankerQueue = this.bankerQueue.filter(
+                    (sid) => sid !== p.sid
+                );
+            if (
+                !this.bankerQueue.includes(p.sid) &&
+                p.balance > this.minimumbank
+            )
+                this.bankerQueue.push(p.sid);
+            console.log(this.bankerQueue);
         });
 
         if (this.warning === 3) {
@@ -565,6 +580,7 @@ class Room {
         delete this.players[current].banker;
         let removed = this.bankerQueue.splice(0, 1);
         this.bankerQueue.push(removed[0]);
+        let p = this.findPlayer(removed);
         if (
             this.bankerQueue.length > 0 &&
             this.bankerQueue[0] !== this.bankerIndex

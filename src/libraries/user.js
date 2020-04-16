@@ -41,7 +41,7 @@ let userbase = {
     password: "0000",
     nickname: "dnkm3",
     gender: 0,
-    cash: 100000,
+    cash: 500,
     imgnumber: 1,
     win: 50,
     lose: 40
