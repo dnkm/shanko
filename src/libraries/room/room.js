@@ -193,7 +193,7 @@ class Room {
         let found = false;
 
         this.leavers.forEach((leaver) => {
-            if (leaver.player.sid === user.sid) found = true;
+            if (leaver.user.sid === user.sid) found = true;
         });
 
         if (!found)
@@ -226,7 +226,7 @@ class Room {
             io
         );
         this.leavers = this.leavers.filter(
-            (leaver) => leaver.player.sid !== user.sid
+            (leaver) => leaver.user.sid !== user.sid
         );
         this.players[p] = undefined;
         user.room = undefined;
