@@ -49,6 +49,7 @@ class Lobby {
             return;
         }
         // if user exists and is already in a room
+        console.log(user);
         if (user.room && user.room !== data.roomnumber)
             room = this.findRoom(user.room);
         user.room = data.roomnumber;
