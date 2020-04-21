@@ -274,8 +274,9 @@ class Room {
             let p = this.findPlayer(this.bankerIndex);
             this.warning = -1;
             this.players[p].balance -= this.minimumbank;
-            this.bank += this.minimumbank;
-            this.coins[this.minimumbank / 10] = 10;
+            let fee = Math.ceil(this.minimumbank * 0.05);
+            this.bank += this.minimumbank - fee;
+            this.coins[Math.floor(this.bank / 10)] = 10;
             Users.changeCash(
                 Users.getUser(this.bankerIndex),
                 -this.minimumbank
