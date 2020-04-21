@@ -209,7 +209,12 @@ class Room {
         // banker logic
         if (this.bankerIndex === player.sid && this.playerCnt() > 1) return;
         // player logic
-        if (this.bankerIndex === user.sid) this.nextBanker();
+        if (this.bankerIndex === user.sid) {
+            this.nextBanker();
+            player.balance += this.bank;
+            Users.changeCash(user, this.bank);
+            this.bank = 0;
+        }
         this.bankerQueue = this.bankerQueue.filter((b) => b !== user.sid);
         socket.leave(this.roomnumber);
         this.piggyback(
@@ -265,7 +270,7 @@ class Room {
             }
         });
         console.log(this.players);
-        if (this.playerCnt() < 2) {
+        if (this.seatedPlayers() < 2) {
             this.nextPhase = this.start;
             return;
         }
