@@ -202,7 +202,7 @@ class Room {
             });
 
         if (player.isActive && this.phaseIndex !== 0) {
-            this.leavers.push({ player, socket });
+            this.leavers.push({ user, socket });
             return;
         }
 
@@ -244,10 +244,10 @@ class Room {
         this.phaseIndex = 0;
         let bankerLeave = undefined;
         this.leavers.forEach((leaver) => {
-            if (leaver.player.sid === this.bankerIndex) bankerLeave = leaver;
-            else this.leave(leaver.player, leaver.socket, io);
+            if (leaver.user.sid === this.bankerIndex) bankerLeave = leaver;
+            else this.leave(leaver.user, leaver.socket, io);
         });
-        if (bankerLeave) this.leave(bankerLeave.player, bankerLeave.socket, io);
+        if (bankerLeave) this.leave(bankerLeave.user, bankerLeave.socket, io);
 
         console.log("---start---");
         this.nextPhase = this.betting;
