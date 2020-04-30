@@ -72,8 +72,6 @@ class Room {
         this.betTotal = 0;
         this.reserved = 0;
         this.nextPhase = this.start;
-        this.timer = undefined;
-        this.time = 100000;
         this.leavers = [];
         this.standers = [];
         this.fees = 0;
@@ -108,7 +106,9 @@ class Room {
             retcode: 0,
             ...this.filterRoomState(user),
         });
-        if (this.findPlayer(user.sid) === -1) socket.join(this.roomnumber);
+        let p = this.findPlayer(user.sid);
+        if (p === -1) socket.join(this.roomnumber);
+        else this.players[p].inRoom = true;
     }
 
     getSeated(data, user, socket, io) {
@@ -202,6 +202,7 @@ class Room {
             });
 
         if (player.isActive && this.phaseIndex !== 0) {
+            player.inRoom = false;
             this.leavers.push({ user, socket });
             return;
         }
@@ -269,7 +270,6 @@ class Room {
                 user.playing = true;
             }
         });
-        console.log(this.players);
         if (this.seatedPlayers() < 2) {
             this.nextPhase = this.start;
             return;
@@ -279,8 +279,7 @@ class Room {
             let p = this.findPlayer(this.bankerIndex);
             this.warning = -1;
             this.players[p].balance -= this.minimumbank;
-            let fee = Math.ceil(this.minimumbank * 0.05);
-            this.bank += this.minimumbank - fee;
+            this.bank += this.minimumbank;
             this.coins[Math.floor(this.bank / 10)] = 10;
             Users.changeCash(
                 Users.getUser(this.bankerIndex),
@@ -701,6 +700,76 @@ class Room {
             this.deck[s1] = this.deck[s2];
             this.deck[s2] = temp;
         }
+    }
+
+    defaultAction() {
+        this.players.forEach((player) => {
+            if (typeof player !== "undefined" && !player.inRoom) {
+                switch (this.phaseIndex) {
+                    case 1:
+                        if (this.bankerIndex === player.sid) break;
+                        let bet = this.minimumbank;
+                        player.bet = bet;
+                        player.balance -= bet;
+                        this.betTotal += bet;
+                        let user = Users.getUser(player.sid);
+                        Users.changeCash(user, -bet);
+                        this.actions.push({
+                            sid: player.sid,
+                            betAmount: bet,
+                            coins: { [this.minimumbank]: 1 },
+                        });
+                        if (typeof this.coins[this.minimumbank] !== "undefined")
+                            this.coins[this.minimumbank] += 1;
+                        else this.coins[this.minimumbank] = 1;
+                        this.piggyback(
+                            "srqst_ingame_place_bet",
+                            {
+                                sid: player.sid,
+                                betAmount: bet,
+                                actions: this.actions,
+                            },
+                            io
+                        );
+                        if (this.checkActions()) {
+                            this.actions = [];
+                            this.deal(io);
+                        }
+                        break;
+                    case 2:
+                        if (this.deals[player.sid] < 1)
+                            this.deals[player.sid]++;
+                        if (this.syncDeals()) this.nextPhase(io);
+                        break;
+                    case 3:
+                        if (!this.checkAction(player)) {
+                            this.actions.push({
+                                sid: player.sid,
+                                action: "pass",
+                            });
+                            if (this.checkActions()) {
+                                this.piggyback(
+                                    "srqst_ingame_player_action_update",
+                                    {
+                                        actions: this.actions,
+                                    },
+                                    io
+                                );
+                                this.actions = [];
+                                if (this.totalDraws == 0) this.nextPhase(io);
+                            }
+                        } else if (
+                            this.deals[user.sid] < 2
+                        )
+                            this.deals[user.sid]++;
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                }
+            }
+        });
     }
 
     // card results

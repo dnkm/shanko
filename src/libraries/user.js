@@ -127,6 +127,7 @@ class User {
     this.lose = userbase[data.id].lose;
     this.room = undefined;
     this.playing = false;
+    this.inroom = false;
   }
 }
 
@@ -228,7 +229,7 @@ class Users {
   logout(socket) {
     let user = this.getUser(socket.id);
     if (typeof user !== "undefined" && !user.playing)
-      this.users = this.users.filter(u => u.sid !== user.sid);
+      this.users = this.users.filter(u => u.sid !== user.sid);      
   }
 
   getUser(data) {
