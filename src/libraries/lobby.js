@@ -72,11 +72,11 @@ class Lobby {
         socket.emit("resp_ingame_imready", { retcode: 2 });
     }
 
-    leave(socket, io) {
+    leave(socket, io, disconnect) {
         let user = Users.getUser(socket.id);
         if (user && user.room) {
             let room = this.findRoom(user.room);
-            this.rooms[room].leave(user, socket, io);
+            this.rooms[room].leave(user, socket, io, disconnect);
             return;
         }
         Logger.respLog(

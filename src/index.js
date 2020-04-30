@@ -26,7 +26,7 @@ io.on("connection", socket => {
   socket.on("disconnect", () => {
     console.log("user has disconnected");
     let u = Users.getUser(socket.id);
-    if (typeof u !== "undefined" && typeof u.room !== "undefined") Lobby.leave(socket, io);
+    if (typeof u !== "undefined" && typeof u.room !== "undefined") Lobby.leave(socket, io, disconnect);
     Users.logout(socket);
   });
 
@@ -49,7 +49,7 @@ io.on("connection", socket => {
   socket.on("rqst_ingame_sit", data => Lobby.getSeated(data, socket, io));
   socket.on("rqst_ingame_standup", () => Lobby.standUp(socket, io));
   socket.on("rqst_ingame_standupcancel", () => Lobby.standUpCancel(socket, io));
-  socket.on("rqst_ingame_leavecancel", () => Lobby.leaveCancel(socket, io));
+  socket.on("rqst_ingame_leavecancel", () => Lobby.cancelLeave(socket, io));
 
   // game sockets
   socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));

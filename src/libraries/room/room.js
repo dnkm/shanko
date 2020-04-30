@@ -162,7 +162,7 @@ class Room {
         if (this.seatedPlayers() === 3) this.nextPhase(io);
     }
 
-    leave(user, socket, io) {
+    leave(user, socket, io, disconnect) {
         // spectator logic
         if (this.spectators.includes(user.sid)) {
             this.spectators = this.spectators.filter((s) => s !== user.sid);
@@ -202,7 +202,8 @@ class Room {
             });
 
         if (player.isActive && this.phaseIndex !== 0) {
-            player.inRoom = false;
+            if(disconnect)
+                player.inRoom = false;
             this.leavers.push({ user, socket });
             return;
         }
@@ -872,6 +873,7 @@ class Room {
                 if (typeof p !== "undefined") {
                     let player = { ...p };
                     delete player["lastConfirmedAnimation"];
+                    delete player.inRoom;
                     if (this.phaseIndex === 6) return player;
                     if (
                         this.revealed.includes(p.sid) ||
