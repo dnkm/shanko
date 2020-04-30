@@ -26,7 +26,7 @@ io.on("connection", socket => {
   socket.on("disconnect", () => {
     console.log("user has disconnected");
     let u = Users.getUser(socket.id);
-    if (typeof u !== "undefined" && typeof u.room !== "undefined") Lobby.leave(socket, io, disconnect);
+    if (typeof u !== "undefined" && typeof u.room !== "undefined") Lobby.leave(socket, io, true);
     Users.logout(socket);
   });
 
