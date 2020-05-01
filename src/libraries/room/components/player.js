@@ -15,6 +15,7 @@ class Player {
     this.bet = 0;
     this.isPlaying = false;
     this.inRoom = true;
+    this.confirm = false;
   }
 }
 
