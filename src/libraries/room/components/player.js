@@ -13,7 +13,7 @@ class Player {
     this.gender = user.gender;
     this.cards = [];
     this.bet = 0;
-    this.isPlaying = false;
+    this.isActive = false;
     this.inRoom = true;
     this.confirm = false;
   }

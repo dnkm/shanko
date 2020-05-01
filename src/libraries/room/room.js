@@ -753,6 +753,7 @@ class Room {
                         this.confirmDeal(user, io);
                         break;
                     case 3:
+                        if(this.bankerIndex === player.sid) break;
                         let data2 = { action: "pass" };
                         this.playerAction(data2, user, player.socket, io);
                         break;
@@ -883,6 +884,7 @@ class Room {
                     delete player["lastConfirmedAnimation"];
                     delete player.inRoom;
                     delete player.socket;
+                    delete player.confirm;
                     if (this.phaseIndex === 6) return player;
                     if (
                         this.revealed.includes(p.sid) ||
