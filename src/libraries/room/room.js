@@ -422,6 +422,7 @@ class Room {
         this.actions.push({ sid: user.sid, action: data.action });
 
         if (this.checkActions()) {
+            this.resetConfirm();
             this.piggyback(
                 "srqst_ingame_player_action_update",
                 {
@@ -610,6 +611,7 @@ class Room {
             this.players[b].balance += this.bank;
             this.bank = 0;
         }
+        this.resetConfirm();
         this.piggyback("srqst_ingame_result", { resultplayers }, io);
         if (this.bank >= this.minimumbank * 3 && this.warning === -1)
             this.warning = 1;
