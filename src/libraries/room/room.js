@@ -289,9 +289,6 @@ class Room {
 
     betting(io) {
         this.phaseIndex = 1;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---bet---");
         this.piggyback(
             "srqst_ingame_gamestart",
@@ -338,17 +335,12 @@ class Room {
         );
         if (this.checkActions()) {
             this.actions = [];
-            this.clearTimer();
-            this.resetConfirm();
             this.deal(io);
         }
     }
 
     deal(io) {
         this.phaseIndex = 2;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---deal---");
         this.nextPhase = this.playerActions;
         this.shuffle();
@@ -395,9 +387,6 @@ class Room {
 
     playerActions(io) {
         this.phaseIndex = 3;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -422,7 +411,6 @@ class Room {
         this.actions.push({ sid: user.sid, action: data.action });
 
         if (this.checkActions()) {
-            this.resetConfirm();
             this.piggyback(
                 "srqst_ingame_player_action_update",
                 {
@@ -432,8 +420,6 @@ class Room {
             );
             this.actions = [];
             if (this.totalDraws == 0) {
-                this.resetConfirm();
-                this.clearTimer();
                 this.nextPhase(io);
             }
         }
@@ -441,9 +427,6 @@ class Room {
 
     threeCard(io) {
         this.phaseIndex = 4;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
         this.piggyback("srqst_ingame_three_card", {}, io);
@@ -451,9 +434,6 @@ class Room {
 
     bankerActions(io) {
         this.phaseIndex = 5;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---bankeraction---");
         this.nextPhase = this.results;
         this.piggyback("srqst_ingame_banker_action", {}, io);
@@ -484,8 +464,6 @@ class Room {
                 )
                     this.nextPhase = this.results;
             }
-            this.resetConfirm();
-            console.log(2);
             this.piggyback("srqst_ingame_three_cards", {}, io);
             return;
         }
@@ -510,8 +488,6 @@ class Room {
                     },
                     io
                 );
-                this.clearTimer();
-                this.resetConfirm();
                 this.nextPhase(io);
             }
         }
@@ -519,9 +495,6 @@ class Room {
 
     results(io) {
         this.phaseIndex = 6;
-        this.resetConfirm();
-        this.clearTimer();
-        this.setTimer(io);
         console.log("---results---");
         this.nextPhase = this.start;
         this.bank += this.betTotal;
@@ -612,7 +585,6 @@ class Room {
             this.players[b].balance += this.bank;
             this.bank = 0;
         }
-        this.resetConfirm();
         this.piggyback("srqst_ingame_result", { resultplayers }, io);
         if (this.bank >= this.minimumbank * 3 && this.warning === -1)
             this.warning = 1;
@@ -667,8 +639,6 @@ class Room {
     confirmDeal(user, io) {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
-        // if (this.players[p].confirm) return;
-        this.players[p].confirm = true;
         if (this.phaseIndex === 2 && this.deals[user.sid] < 1)
             this.deals[user.sid]++;
         else if (this.phaseIndex === 3 && this.deals[user.sid] < 2)
@@ -682,8 +652,6 @@ class Room {
             return;
         }
         if (this.syncDeals()) {
-            this.clearTimer();
-            this.resetConfirm();
             this.nextPhase(io);
         }
     }
@@ -703,14 +671,9 @@ class Room {
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
-        // if (this.players[p].confirm) return;
-        console.log("confirm", user.sid, this.players[p].confirm);
-        this.players[p].confirm = true;
         if (p !== -1) this.players[p].lastConfirmedAnimation = data;
         if (this.phaseIndex === 3 && this.totalDraws > 0) return;
         if (this.sync()) {
-            this.clearTimer();
-            this.resetConfirm();
             this.nextPhase(io);
         }
     }
@@ -723,8 +686,7 @@ class Room {
                 p.isActive &&
                 !PHASES[this.phaseIndex].anims.includes(
                     p.lastConfirmedAnimation
-                ) &&
-                p.inRoom
+                )
             )
                 return false;
         }
