@@ -700,6 +700,7 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         if (this.players[p].confirm) return;
+        console.log("confirm", user.sid, this.players[p].confirm);
         this.players[p].confirm = true;
         if (p !== -1) this.players[p].lastConfirmedAnimation = data;
         if (this.phaseIndex === 3 && this.totalDraws > 0) return;
