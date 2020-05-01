@@ -289,6 +289,8 @@ class Room {
 
     betting(io) {
         this.phaseIndex = 1;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---bet---");
         this.piggyback(
@@ -344,6 +346,8 @@ class Room {
 
     deal(io) {
         this.phaseIndex = 2;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---deal---");
         this.nextPhase = this.playerActions;
@@ -391,6 +395,8 @@ class Room {
 
     playerActions(io) {
         this.phaseIndex = 3;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
@@ -434,6 +440,8 @@ class Room {
 
     threeCard(io) {
         this.phaseIndex = 4;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
@@ -442,6 +450,8 @@ class Room {
 
     bankerActions(io) {
         this.phaseIndex = 5;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---bankeraction---");
         this.nextPhase = this.results;
@@ -506,6 +516,8 @@ class Room {
 
     results(io) {
         this.phaseIndex = 6;
+        this.resetConfirm();
+        this.clearTimer();
         this.setTimer(io);
         console.log("---results---");
         this.nextPhase = this.start;
@@ -539,7 +551,6 @@ class Room {
                         p.balance > this.minimumbank
                     )
                         this.bankerQueue.push(p.sid);
-                    console.log(this.bankerQueue);
                 } else if (!this.losers.includes(p.sid)) {
                     reserved += p.bet;
                     if (!this.winners.includes(p.sid)) this.winners.push(p.sid);
@@ -549,7 +560,6 @@ class Room {
         });
         sorted = sorted.sort((a, b) => b.bet - a.bet);
         sorted.forEach((p) => {
-            console.log("---", p.sid, "---");
             let user = Users.getUser(p.sid);
             let result = this.cardsValue(p.cards).multiplier;
             if (result === -1) result = 1;
@@ -582,7 +592,6 @@ class Room {
                 p.balance > this.minimumbank
             )
                 this.bankerQueue.push(p.sid);
-            console.log(this.bankerQueue);
         });
 
         if (this.warning === 3) {
@@ -745,21 +754,21 @@ class Room {
                 let user = Users.getUser(player.sid);
                 switch (this.phaseIndex) {
                     case 1:
-                        if(this.bankerIndex === player.sid) break;
+                        if (this.bankerIndex === player.sid) break;
                         let data = {
                             betAmount: this.minimumbank,
                             coins: { [this.minimumbank]: 1 },
                         };
-                        if(!this.checkAction(player))
+                        if (!this.checkAction(player))
                             this.bet(data, user, player.socket, io);
                         break;
                     case 2:
                         this.confirmDeal(user, io);
                         break;
                     case 3:
-                        if(this.bankerIndex === player.sid) break;
+                        if (this.bankerIndex === player.sid) break;
                         let data2 = { action: "pass" };
-                        if(!this.checkAction(player))
+                        if (!this.checkAction(player))
                             this.playerAction(data2, user, player.socket, io);
                         break;
                     case 4:
@@ -866,7 +875,7 @@ class Room {
     }
 
     filterPlayer(player) {
-        let p = {...player};
+        let p = { ...player };
         delete p.lastConfirmedAnimation;
         delete p.inRoom;
         delete p.socket;
