@@ -483,6 +483,7 @@ class Room {
                 )
                     this.nextPhase = this.results;
             }
+            this.resetConfirm();
             this.piggyback("srqst_ingame_three_cards", {}, io);
             return;
         }
