@@ -391,6 +391,7 @@ class Room {
 
     playerActions(io) {
         this.phaseIndex = 3;
+        this.setTimer(io);
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -424,8 +425,9 @@ class Room {
             );
             this.actions = [];
             if (this.totalDraws == 0) {
-                this.nextPhase(io);
                 this.resetConfirm();
+                this.clearTimer();
+                this.nextPhase(io);
             }
         }
     }
