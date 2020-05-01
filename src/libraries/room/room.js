@@ -750,7 +750,8 @@ class Room {
                             betAmount: this.minimumbank,
                             coins: { [this.minimumbank]: 1 },
                         };
-                        this.bet(data, user, player.socket, io);
+                        if(!this.checkAction(player))
+                            this.bet(data, user, player.socket, io);
                         break;
                     case 2:
                         this.confirmDeal(user, io);
@@ -758,7 +759,8 @@ class Room {
                     case 3:
                         if(this.bankerIndex === player.sid) break;
                         let data2 = { action: "pass" };
-                        this.playerAction(data2, user, player.socket, io);
+                        if(!this.checkAction(player))
+                            this.playerAction(data2, user, player.socket, io);
                         break;
                     case 4:
                         if (player.sid === this.bankerIndex)
@@ -907,7 +909,6 @@ class Room {
             minimumbank: this.minimumbank,
             bank: this.bank,
             coins: this.coins,
-            status: this.status,
             warning: this.warning,
             deck: this.deck.length,
             winners: this.winners,
