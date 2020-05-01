@@ -134,7 +134,7 @@ class Room {
             this.piggyback(
                 "srqst_ingame_newuser",
                 {
-                    ...this.players[data.seatIndex],
+                    ...filterPlayer(this.players[data.seatIndex]),
                 },
                 io
             );
@@ -152,7 +152,7 @@ class Room {
             this.piggyback(
                 "srqst_ingame_newuser",
                 {
-                    ...this.players[data.seatIndex],
+                    ...filterPlayer(this.players[data.seatIndex]),
                 },
                 io
             );
@@ -856,6 +856,14 @@ class Room {
             bank: this.minimumbank,
             status,
         };
+    }
+
+    filterPlayer(player) {
+        let p = {...player};
+        delete p.lastConfirmedAnimation;
+        delete p.inRoom;
+        delete p.socket;
+        return p;
     }
 
     hiddenCards(length) {
