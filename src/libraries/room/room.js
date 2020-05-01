@@ -752,8 +752,8 @@ class Room {
                         this.confirmDeal(user, io);
                         break;
                     case 3:
-                        let data = { action: "pass" };
-                        this.playerAction(data, user, player.socket, io);
+                        let data2 = { action: "pass" };
+                        this.playerAction(data2, user, player.socket, io);
                         break;
                     case 4:
                         if (player.sid === this.bankerIndex)
