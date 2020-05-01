@@ -134,7 +134,7 @@ class Room {
             this.piggyback(
                 "srqst_ingame_newuser",
                 {
-                    ...filterPlayer(this.players[data.seatIndex]),
+                    ...this.filterPlayer(this.players[data.seatIndex]),
                 },
                 io
             );
@@ -152,7 +152,7 @@ class Room {
             this.piggyback(
                 "srqst_ingame_newuser",
                 {
-                    ...filterPlayer(this.players[data.seatIndex]),
+                    ...this.filterPlayer(this.players[data.seatIndex]),
                 },
                 io
             );
