@@ -667,7 +667,7 @@ class Room {
     confirmDeal(user, io) {
         let p = this.findPlayer(user.sid);
         if (p === -1) return;
-        if (this.players[p].confirm) return;
+        // if (this.players[p].confirm) return;
         this.players[p].confirm = true;
         if (this.phaseIndex === 2 && this.deals[user.sid] < 1)
             this.deals[user.sid]++;
@@ -703,7 +703,7 @@ class Room {
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
-        if (this.players[p].confirm) return;
+        // if (this.players[p].confirm) return;
         console.log("confirm", user.sid, this.players[p].confirm);
         this.players[p].confirm = true;
         if (p !== -1) this.players[p].lastConfirmedAnimation = data;
@@ -744,54 +744,54 @@ class Room {
     }
 
     setTimer(io) {
-        this.timer = setTimeout(() => {
-            this.defaultAction(io);
-        }, [10000]);
+        // this.timer = setTimeout(() => {
+        //     this.defaultAction(io);
+        // }, [10000]);
     }
 
     clearTimer(io) {
-        clearTimeout(this.timer);
+        // clearTimeout(this.timer);
     }
 
     defaultAction(io) {
-        this.players.forEach((player) => {
-            if (typeof player !== "undefined" && !player.confirm) {
-                let user = Users.getUser(player.sid);
-                switch (this.phaseIndex) {
-                    case 1:
-                        if (this.bankerIndex === player.sid) break;
-                        let data = {
-                            betAmount: this.minimumbank,
-                            coins: { [this.minimumbank]: 1 },
-                        };
-                        if (!this.checkAction(player))
-                            this.bet(data, user, player.socket, io);
-                        break;
-                    case 2:
-                        this.confirmDeal(user, io);
-                        break;
-                    case 3:
-                        if (this.bankerIndex === player.sid) break;
-                        let data2 = { action: "pass" };
-                        if (!this.checkAction(player))
-                            this.playerAction(data2, user, player.socket, io);
-                        break;
-                    case 4:
-                        console.log(1);
-                        if (player.sid === this.bankerIndex)
-                            this.bankerAction("pass", user, player.socket, io);
-                        this.confirm("three card", user, io);
-                        break;
-                    case 5:
-                        if (player.sid === this.bankerIndex)
-                            this.bankerAction("pass", user, player.socket, io);
-                        break;
-                    case 6:
-                        this.confirm("results", user, io);
-                        break;
-                }
-            }
-        });
+        // this.players.forEach((player) => {
+        //     if (typeof player !== "undefined" && !player.confirm) {
+        //         let user = Users.getUser(player.sid);
+        //         switch (this.phaseIndex) {
+        //             case 1:
+        //                 if (this.bankerIndex === player.sid) break;
+        //                 let data = {
+        //                     betAmount: this.minimumbank,
+        //                     coins: { [this.minimumbank]: 1 },
+        //                 };
+        //                 if (!this.checkAction(player))
+        //                     this.bet(data, user, player.socket, io);
+        //                 break;
+        //             case 2:
+        //                 this.confirmDeal(user, io);
+        //                 break;
+        //             case 3:
+        //                 if (this.bankerIndex === player.sid) break;
+        //                 let data2 = { action: "pass" };
+        //                 if (!this.checkAction(player))
+        //                     this.playerAction(data2, user, player.socket, io);
+        //                 break;
+        //             case 4:
+        //                 console.log(1);
+        //                 if (player.sid === this.bankerIndex)
+        //                     this.bankerAction("pass", user, player.socket, io);
+        //                 this.confirm("three card", user, io);
+        //                 break;
+        //             case 5:
+        //                 if (player.sid === this.bankerIndex)
+        //                     this.bankerAction("pass", user, player.socket, io);
+        //                 break;
+        //             case 6:
+        //                 this.confirm("results", user, io);
+        //                 break;
+        //         }
+        //     }
+        // });
     }
 
     // card results
@@ -974,9 +974,9 @@ class Room {
     }
 
     resetConfirm() {
-        this.players.forEach((player) => {
-            if (typeof player !== "undefined") player.confirm = false;
-        });
+        // this.players.forEach((player) => {
+        //     if (typeof player !== "undefined") player.confirm = false;
+        // });
     }
 }
 
