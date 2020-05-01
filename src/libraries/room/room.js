@@ -738,10 +738,11 @@ class Room {
 
     defaultAction(io) {
         this.players.forEach((player) => {
-            if (typeof player !== "undefined") {
+            if (typeof player !== "undefined" && !player.confirm) {
                 let user = Users.getUser(player.sid);
-                switch (this.phaseIndex && !player.confirm) {
+                switch (this.phaseIndex) {
                     case 1:
+                        if(this.bankerIndex === player.sid) break;
                         let data = {
                             betAmount: this.minimumbank,
                             coins: { [this.minimumbank]: 1 },
