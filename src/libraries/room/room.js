@@ -450,6 +450,7 @@ class Room {
 
     bankerAction(data, user, socket, io) {
         if (user.sid !== this.bankerIndex) return;
+        let p = this.findPlayer(user.sid);
         this.players[p].socket = socket;
         if (this.phaseIndex === 4) {
             if (data === "threecard") {
