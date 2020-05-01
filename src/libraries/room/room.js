@@ -485,6 +485,7 @@ class Room {
                     this.nextPhase = this.results;
             }
             this.resetConfirm();
+            console.log(2);
             this.piggyback("srqst_ingame_three_cards", {}, io);
             return;
         }
@@ -776,6 +777,7 @@ class Room {
                             this.playerAction(data2, user, player.socket, io);
                         break;
                     case 4:
+                        console.log(1);
                         if (player.sid === this.bankerIndex)
                             this.bankerAction("pass", user, player.socket, io);
                         this.confirm("three card", user, io);
