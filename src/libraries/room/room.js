@@ -665,7 +665,7 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         if (this.players[p].lastAction === "draw") {
-            this.players[p].lastAction === "undefined";
+            this.players[p].lastAction = undefined;
             return;
         }
         if (p !== -1) this.players[p].confirm = true;
@@ -928,8 +928,8 @@ class Room {
     resetPlayers() {
         this.players.forEach((player) => {
             if (typeof player !== "undefined") {
-                this.lastAction = undefined;
-                this.confirm = false;
+                player.lastAction = undefined;
+                player.confirm = false;
             }
         });
     }
