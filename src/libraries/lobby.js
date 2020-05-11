@@ -176,14 +176,6 @@ class Lobby {
         }
     }
 
-    confirmDeal(socket, io) {
-        let user = Users.getUser(socket.id);
-        if (typeof user !== "undefined" && user.room) {
-            let room = this.findRoom(user.room);
-            this.rooms[room].confirmDeal(user, io);
-        }
-    }
-
     playerAction(data, socket, io) {
         let user = Users.getUser(socket.id);
         if (user && user.room) {

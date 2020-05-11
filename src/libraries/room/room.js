@@ -661,31 +661,6 @@ class Room {
         return false;
     }
 
-    confirmDeal(user, io) {
-        let p = this.findPlayer(user.sid);
-        if (
-            p === -1 ||
-            this.players[p].confirm ||
-            this.players.action !== "draw"
-        )
-            return;
-        this.players[p].confirm = true;
-        if (this.syncDeals()) {
-            this.nextPhase(io);
-        }
-    }
-
-    syncDeals() {
-        this.players.forEach((p) => {
-            if (
-                typeof p !== "undefined" &&
-                (p.lastAction === undefined || !p.confirm)
-            )
-                return false;
-        });
-        return true;
-    }
-
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
@@ -747,7 +722,6 @@ class Room {
                             this.bet(data, user, player.socket, io);
                         break;
                     case 2:
-                        this.confirm("deal", user, io);
                         this.confirm("deal", user, io);
                         break;
                     case 3:

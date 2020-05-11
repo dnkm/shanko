@@ -53,7 +53,7 @@ io.on("connection", socket => {
 
   // game sockets
   socket.on("sresp_ingame_place_bet", data => Lobby.bet(data, socket, io));
-  socket.on("sresp_ingame_deal", () => Lobby.confirmDeal(socket, io));
+  socket.on("sresp_ingame_deal", () => Lobby.confirm("draw", socket, io));
   socket.on("sresp_ingame_player_action", data =>
     Lobby.playerAction(data, socket, io)
   );
