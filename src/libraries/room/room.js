@@ -292,6 +292,8 @@ class Room {
     betting(io) {
         this.phaseIndex = 1;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---bet---");
         this.piggyback(
             "srqst_ingame_gamestart",
@@ -346,6 +348,8 @@ class Room {
     deal(io) {
         this.phaseIndex = 2;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---deal---");
         this.nextPhase = this.playerActions;
         this.shuffle();
@@ -355,7 +359,6 @@ class Room {
         if (this.roomnumber === 1002) {
             this.players.forEach((p) => {
                 if (p && p.isActive) {
-                    p.lastAction = "draw";
                     if (this.bankerIndex === p.sid) {
                         let c1 = { img: "HEARTS", num: "5" };
                         let c2 = { img: "HEARTS", num: "4" };
@@ -395,6 +398,8 @@ class Room {
     playerActions(io) {
         this.phaseIndex = 3;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -435,6 +440,8 @@ class Room {
     threeCard(io) {
         this.phaseIndex = 4;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
         this.piggyback("srqst_ingame_three_card", {}, io);
@@ -443,6 +450,8 @@ class Room {
     bankerActions(io) {
         this.phaseIndex = 5;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---bankeraction---");
         this.nextPhase = this.results;
         this.piggyback("srqst_ingame_banker_action", {}, io);
@@ -508,6 +517,8 @@ class Room {
     results(io) {
         this.phaseIndex = 6;
         this.resetPlayers();
+        this.clearTimer();
+        this.setTimer();
         console.log("---results---");
         this.nextPhase = this.start;
         this.bank += this.betTotal;
