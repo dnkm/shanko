@@ -663,6 +663,10 @@ class Room {
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
+        console.log(data);
+        if(p !== -1) {
+            console.log(data, this.players[p].confirm)
+        }
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
             return;
