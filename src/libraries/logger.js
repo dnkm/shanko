@@ -1,6 +1,6 @@
 class Logger {
   reqLog(socket, u) {
-    console.log(u, socket[0], socket[1]);
+    // console.log(u, socket[0], socket[1]);
 
     // if (socket[1]) {
     //   console.log(

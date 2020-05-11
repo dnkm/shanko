@@ -422,7 +422,7 @@ class Room {
             this.totalDraws++;
         }
         this.actions.push({ sid: user.sid, action: data.action });
-        this.player[p].lastAction = data.action;
+        this.players[p].lastAction = data.action;
         if (this.checkActions()) {
             this.piggyback(
                 "srqst_ingame_player_action_update",
