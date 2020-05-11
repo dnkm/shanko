@@ -292,8 +292,8 @@ class Room {
     betting(io) {
         this.phaseIndex = 1;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---bet---");
         this.piggyback(
             "srqst_ingame_gamestart",
@@ -348,8 +348,8 @@ class Room {
     deal(io) {
         this.phaseIndex = 2;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---deal---");
         this.nextPhase = this.playerActions;
         this.shuffle();
@@ -398,8 +398,8 @@ class Room {
     playerActions(io) {
         this.phaseIndex = 3;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -440,8 +440,8 @@ class Room {
     threeCard(io) {
         this.phaseIndex = 4;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
         this.piggyback("srqst_ingame_three_card", {}, io);
@@ -450,8 +450,8 @@ class Room {
     bankerActions(io) {
         this.phaseIndex = 5;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---bankeraction---");
         this.nextPhase = this.results;
         this.piggyback("srqst_ingame_banker_action", {}, io);
@@ -517,8 +517,8 @@ class Room {
     results(io) {
         this.phaseIndex = 6;
         this.resetPlayers();
-        this.clearTimer();
-        this.setTimer();
+        this.clearTimer(io);
+        this.setTimer(io);
         console.log("---results---");
         this.nextPhase = this.start;
         this.bank += this.betTotal;
