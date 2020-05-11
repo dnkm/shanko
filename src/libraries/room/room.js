@@ -376,7 +376,6 @@ class Room {
         } else {
             this.players.forEach((p) => {
                 if (typeof p !== "undefined" && p.isActive) {
-                    p.lastAction = "draw";
                     p.cards.push(this.deck.pop());
                     p.cards.push(this.deck.pop());
                     if (this.cardsValue(p.cards).total >= 8)
