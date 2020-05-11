@@ -15,6 +15,7 @@ class Player {
     this.bet = 0;
     this.isActive = false;
     this.inRoom = true;
+    this.lastAction = undefined;
     this.confirm = false;
   }
 }
