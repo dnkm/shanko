@@ -169,6 +169,7 @@ class Lobby {
     }
 
     confirm(data, socket, io) {
+        console.log(data);
         let user = Users.getUser(socket.id);
         if (user && user.room) {
             let room = this.findRoom(user.room);
