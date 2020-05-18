@@ -459,6 +459,7 @@ class Room {
     bankerAction(data, user, socket, io, defaultAction) {
         if (user.sid !== this.bankerIndex) return;
         let p = this.findPlayer(user.sid);
+        console.log("banker action", this.players[p].lastAction)
         if (typeof this.players[p].lastAction !== "undefined") return;
         this.players[p].socket = socket;
         if (this.phaseIndex === 4) {
