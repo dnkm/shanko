@@ -214,6 +214,9 @@ class Lobby {
     }
 
     reset() {
+        this.rooms.forEach(room => {
+            room.clearTimer();
+        })
         this.rooms = [
             ...this.populateRooms("RANK1"),
             ...this.populateRooms("RANK2"),
