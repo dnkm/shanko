@@ -294,6 +294,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("start");
         console.log("---bet---");
         this.piggyback(
             "srqst_ingame_gamestart",
@@ -331,6 +332,7 @@ class Room {
                 if (this.coins[c]) this.coins[c] += data.coins[c];
                 else this.coins[c] = data.coins[c];
             });
+        this.debug(player.sid + " bet");
         this.piggyback(
             "srqst_ingame_place_bet",
             {
@@ -351,6 +353,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("deal")
         console.log("---deal---");
         this.nextPhase = this.playerActions;
         this.shuffle();
@@ -400,6 +403,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("player actions")
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -423,6 +427,7 @@ class Room {
         }
         this.actions.push({ sid: user.sid, action: data.action });
         this.players[p].lastAction = data.action;
+        this.debug(player.sid + " " + data.action);
         if (this.checkActions()) {
             this.piggyback(
                 "srqst_ingame_player_action_update",
@@ -441,6 +446,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("three card")
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
         this.piggyback("srqst_ingame_three_card", {}, io);
@@ -451,6 +457,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("banker action")
         console.log("---bankeraction---");
         this.nextPhase = this.results;
         this.piggyback("srqst_ingame_banker_action", {}, io);
@@ -459,7 +466,6 @@ class Room {
     bankerAction(data, user, socket, io, defaultAction) {
         if (user.sid !== this.bankerIndex) return;
         let p = this.findPlayer(user.sid);
-        console.log("banker action", this.players[p].lastAction);
         if (typeof this.players[p].lastAction !== "undefined") return;
         this.players[p].socket = socket;
         if (this.phaseIndex === 4) {
@@ -500,6 +506,7 @@ class Room {
                     io
                 );
                 this.players[p].lastAction = "draw";
+                this.debug(player.sid + " banker draw");
             } else {
                 this.piggyback(
                     "srqst_ingame_banker_action_update",
@@ -519,6 +526,7 @@ class Room {
         this.resetPlayers();
         this.clearTimer(io);
         this.setTimer(io);
+        this.debug("results");
         console.log("---results---");
         this.nextPhase = this.start;
         this.bank += this.betTotal;
@@ -664,8 +672,10 @@ class Room {
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
+        this.debug(user.sid + " confirm " + data);
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
+            this.debug(user.sid + " confirmed draw " + data);
             return;
         }
         if (p !== -1) this.players[p].confirm = true;
@@ -942,7 +952,8 @@ class Room {
         });
     }
 
-    debug() {
+    debug(text) {
+        console.log("----" + text + "----");
         this.players.forEach((player) => {
             if (typeof player !== "undefined")
                 console.log(
