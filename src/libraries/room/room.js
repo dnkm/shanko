@@ -505,7 +505,6 @@ class Room {
                     },
                     io
                 );
-                this.players[p].lastAction = "draw";
                 this.debug(this.players[p].sid + " banker draw");
             } else {
                 this.piggyback(
@@ -673,6 +672,7 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         this.debug(user.sid + " confirm " + data);
+        if(this.players[p].confirm) return;
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
             this.debug(user.sid + " confirmed draw " + data);
