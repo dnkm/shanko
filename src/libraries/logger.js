@@ -1,6 +1,6 @@
 class Logger {
   reqLog(socket, u) {
-    console.log(u, socket[0], socket[1]);
+    // console.log(u, socket[0], socket[1]);
 
     // if (socket[1]) {
     //   console.log(
@@ -18,7 +18,7 @@ class Logger {
   }
 
   respLog(name, payload, msg) {
-    console.log(name, msg);
+    // console.log(name, msg);
   }
 }
 

@@ -332,7 +332,7 @@ class Room {
                 if (this.coins[c]) this.coins[c] += data.coins[c];
                 else this.coins[c] = data.coins[c];
             });
-        this.debug(player.sid + " bet");
+        this.debug(user.sid + " bet");
         this.piggyback(
             "srqst_ingame_place_bet",
             {
