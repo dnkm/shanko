@@ -459,7 +459,7 @@ class Room {
     bankerAction(data, user, socket, io, defaultAction) {
         if (user.sid !== this.bankerIndex) return;
         let p = this.findPlayer(user.sid);
-        console.log("banker action", this.players[p].lastAction)
+        console.log("banker action", this.players[p].lastAction);
         if (typeof this.players[p].lastAction !== "undefined") return;
         this.players[p].socket = socket;
         if (this.phaseIndex === 4) {
@@ -664,10 +664,6 @@ class Room {
     confirm(data, user, io) {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
-        console.log(data);
-        if (p !== -1) {
-            console.log(data, this.players[p].confirm);
-        }
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
             return;
@@ -943,6 +939,21 @@ class Room {
                 player.lastAction = undefined;
                 player.confirm = false;
             }
+        });
+    }
+
+    debug() {
+        this.players.forEach((player) => {
+            if (typeof player !== "undefined")
+                console.log(
+                    player.sid,
+                    typeof player.lastAction === "undefined"
+                        ? "undefined"
+                        : player.lastAction,
+                    typeof player.confirm === "undefined"
+                        ? "undefined"
+                        : player.confirm
+                );
         });
     }
 }
