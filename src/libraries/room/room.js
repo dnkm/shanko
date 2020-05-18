@@ -304,6 +304,7 @@ class Room {
     }
 
     bet(data, user, socket, io) {
+        if (typeof user === "undefined") return;
         let p = this.findPlayer(user.sid);
         if (
             this.phaseIndex !== 1 ||
@@ -431,8 +432,7 @@ class Room {
                 io
             );
             this.actions = [];
-            if (defaultAction)
-                this.confirm("player action", user, io);
+            if (defaultAction) this.confirm("player action", user, io);
         }
     }
 
@@ -459,6 +459,7 @@ class Room {
     bankerAction(data, user, socket, io, defaultAction) {
         if (user.sid !== this.bankerIndex) return;
         let p = this.findPlayer(user.sid);
+        if (typeof this.players[p].lastAction === "undefined") return;
         this.players[p].socket = socket;
         if (this.phaseIndex === 4) {
             if (data === "threecard") {
@@ -482,8 +483,7 @@ class Room {
                     this.nextPhase = this.results;
             }
             this.piggyback("srqst_ingame_three_cards", {}, io);
-            if(defaultAction)
-                this.confirm("three card", user, io);
+            if (defaultAction) this.confirm("three card", user, io);
             return;
         }
         if (this.phaseIndex === 5) {
@@ -664,8 +664,8 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         console.log(data);
-        if(p !== -1) {
-            console.log(data, this.players[p].confirm)
+        if (p !== -1) {
+            console.log(data, this.players[p].confirm);
         }
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
@@ -678,11 +678,7 @@ class Room {
     sync() {
         for (let i = 0; i < this.players.length; i++) {
             let p = this.players[i];
-            if (
-                typeof p !== "undefined" &&
-                p.isActive &&
-                !p.confirm
-            )
+            if (typeof p !== "undefined" && p.isActive && !p.confirm)
                 return false;
         }
         return true;
@@ -731,11 +727,23 @@ class Room {
                         if (this.bankerIndex === player.sid) break;
                         let data2 = { action: "pass" };
                         if (!this.checkAction(player))
-                            this.playerAction(data2, user, player.socket, io, true);
+                            this.playerAction(
+                                data2,
+                                user,
+                                player.socket,
+                                io,
+                                true
+                            );
                         break;
                     case 4:
                         if (player.sid === this.bankerIndex)
-                            this.bankerAction("pass", user, player.socket, io, true);
+                            this.bankerAction(
+                                "pass",
+                                user,
+                                player.socket,
+                                io,
+                                true
+                            );
                         break;
                     case 5:
                         if (player.sid === this.bankerIndex)
