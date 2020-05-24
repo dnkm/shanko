@@ -718,7 +718,7 @@ class Room {
     defaultAction(io) {
         console.log("---default action " + this.phaseIndex + "---");
         this.players.forEach((player) => {
-            if (typeof player !== "undefined" && !player.confirm) {
+            if (typeof player !== "undefined" && !player.confirm && player.isActive) {
                 let user = Users.getUser(player.sid);
                 switch (this.phaseIndex) {
                     case 1:
