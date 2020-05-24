@@ -432,7 +432,8 @@ class Room {
                 io
             );
             this.actions = [];
-            if (defaultAction) this.confirm("player action", user, io);
+            this.clearTimer(io);
+            this.setTimer(io);
         }
     }
 
@@ -485,7 +486,10 @@ class Room {
                     this.nextPhase = this.results;
             }
             this.piggyback("srqst_ingame_three_cards", {}, io);
-            if (defaultAction) this.confirm("three card", user, io);
+            if(defaultAction)
+                this.confirm("three card", user, io);
+            this.clearTimer(io);
+            this.setTimer(io);
             return;
         }
         if (this.phaseIndex === 5) {
@@ -501,6 +505,8 @@ class Room {
                     io
                 );
                 this.debug(this.players[p].sid + " banker draw");
+                this.clearTimer(io);
+                this.setTimer(io);
             } else {
                 this.piggyback(
                     "srqst_ingame_banker_action_update",
@@ -727,18 +733,20 @@ class Room {
                         this.confirm("deal", user, io);
                         break;
                     case 3:
-                        if (this.bankerIndex === player.sid) break;
-                        let data2 = { action: "pass" };
-                        if (!this.checkAction(player))
-                            this.playerAction(
-                                data2,
-                                user,
-                                player.socket,
-                                io,
-                                true
-                            );
-                        else
+                        if(this.checkActions())
                             this.confirm("player action", user, io);
+                        else {
+                            if (this.bankerIndex === player.sid) break;
+                            let data2 = { action: "pass" };
+                            if (!this.checkAction(player))
+                                this.playerAction(
+                                    data2,
+                                    user,
+                                    player.socket,
+                                    io,
+                                    true
+                                );
+                        }
                         break;
                     case 4:
                         if (player.sid === this.bankerIndex)
