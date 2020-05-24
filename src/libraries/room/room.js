@@ -111,6 +111,7 @@ class Room {
         });
         let p = this.findPlayer(user.sid);
         if (p === -1) socket.join(this.roomnumber);
+        else this.leavers = this.leavers.filter((l) => l.sid !== user.sid);
     }
 
     getSeated(data, user, socket, io) {
@@ -158,7 +159,9 @@ class Room {
                 io
             );
         }
-        if (this.seatedPlayers() === 3) this.nextPhase(io);
+        this.leavers = this.leavers.filter((l) => l.sid !== user.sid);
+        if (this.seatedPlayers() === 3 && this.phaseIndex === 0)
+            this.nextPhase(io);
     }
 
     leave(user, socket, io, disconnect) {
@@ -290,7 +293,7 @@ class Room {
         this.phaseIndex = 1;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
+        this.setTimer(io, 10000);
         this.debug("start");
         console.log("---bet---");
         this.piggyback(
@@ -349,8 +352,8 @@ class Room {
         this.phaseIndex = 2;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
-        this.debug("deal")
+        this.setTimer(io, 10000);
+        this.debug("deal");
         console.log("---deal---");
         this.nextPhase = this.playerActions;
         this.shuffle();
@@ -399,8 +402,8 @@ class Room {
         this.phaseIndex = 3;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
-        this.debug("player actions")
+        this.setTimer(io, 10000);
+        this.debug("player actions");
         console.log("---playeraction---");
         this.nextPhase = this.threeCard;
         this.piggyback("srqst_ingame_player_action", {}, io);
@@ -418,8 +421,7 @@ class Room {
         )
             return;
         this.players[p].socket = socket;
-        if (data.action === "draw")
-            this.players[p].cards.push(this.deck.pop());
+        if (data.action === "draw") this.players[p].cards.push(this.deck.pop());
         this.actions.push({ sid: user.sid, action: data.action });
         this.players[p].lastAction = data.action;
         this.debug(user.sid + " " + data.action);
@@ -433,7 +435,7 @@ class Room {
             );
             this.actions = [];
             this.clearTimer(io);
-            this.setTimer(io);
+            this.setTimer(io, 5000);
         }
     }
 
@@ -441,8 +443,8 @@ class Room {
         this.phaseIndex = 4;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
-        this.debug("three card")
+        this.setTimer(io, 10000);
+        this.debug("three card");
         console.log("---threecard---");
         this.nextPhase = this.bankerActions;
         this.piggyback("srqst_ingame_three_card", {}, io);
@@ -452,8 +454,8 @@ class Room {
         this.phaseIndex = 5;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
-        this.debug("banker action")
+        this.setTimer(io, 10000);
+        this.debug("banker action");
         console.log("---bankeraction---");
         this.nextPhase = this.results;
         this.piggyback("srqst_ingame_banker_action", {}, io);
@@ -486,10 +488,9 @@ class Room {
                     this.nextPhase = this.results;
             }
             this.piggyback("srqst_ingame_three_cards", {}, io);
-            if(defaultAction)
-                this.confirm("three card", user, io);
+            if (defaultAction) this.confirm("three card", user, io);
             this.clearTimer(io);
-            this.setTimer(io);
+            this.setTimer(io, 5000);
             return;
         }
         if (this.phaseIndex === 5) {
@@ -506,7 +507,7 @@ class Room {
                 );
                 this.debug(this.players[p].sid + " banker draw");
                 this.clearTimer(io);
-                this.setTimer(io);
+                this.setTimer(io, 5000);
             } else {
                 this.piggyback(
                     "srqst_ingame_banker_action_update",
@@ -525,7 +526,7 @@ class Room {
         this.phaseIndex = 6;
         this.resetPlayers();
         this.clearTimer(io);
-        this.setTimer(io);
+        this.setTimer(io, 10000);
         this.debug("results");
         console.log("---results---");
         this.nextPhase = this.start;
@@ -673,7 +674,7 @@ class Room {
         if (!PHASES[this.phaseIndex].anims.includes(data)) return;
         let p = this.findPlayer(user.sid);
         this.debug(user.sid + " confirm " + data);
-        if(this.players[p].confirm) return;
+        if (this.players[p].confirm) return;
         if (this.players[p].lastAction === "draw") {
             this.players[p].lastAction = undefined;
             this.debug(user.sid + " confirmed draw " + data);
@@ -704,10 +705,10 @@ class Room {
         }
     }
 
-    setTimer(io) {
+    setTimer(io, time) {
         this.timer = setTimeout(() => {
             this.defaultAction(io);
-        }, [10000]);
+        }, [time]);
     }
 
     clearTimer(io) {
@@ -733,7 +734,7 @@ class Room {
                         this.confirm("deal", user, io);
                         break;
                     case 3:
-                        if(this.checkActions())
+                        if (this.checkActions())
                             this.confirm("player action", user, io);
                         else {
                             if (this.bankerIndex === player.sid) break;
@@ -757,8 +758,7 @@ class Room {
                                 io,
                                 true
                             );
-                        else
-                            this.confirm("three card", user, io);
+                        else this.confirm("three card", user, io);
                         break;
                     case 5:
                         if (player.sid !== this.bankerIndex) break;
