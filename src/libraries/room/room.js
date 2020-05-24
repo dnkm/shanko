@@ -709,6 +709,7 @@ class Room {
     }
 
     defaultAction(io) {
+        console.log("---default action " + this.phaseIndex + "---");
         this.players.forEach((player) => {
             if (typeof player !== "undefined" && !player.confirm) {
                 let user = Users.getUser(player.sid);
@@ -736,6 +737,8 @@ class Room {
                                 io,
                                 true
                             );
+                        else
+                            this.confirm("player action", user, io);
                         break;
                     case 4:
                         if (player.sid === this.bankerIndex)
