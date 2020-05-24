@@ -749,10 +749,12 @@ class Room {
                                 io,
                                 true
                             );
+                        else
+                            this.confirm("three card", user, io);
                         break;
                     case 5:
-                        if (player.sid === this.bankerIndex)
-                            this.bankerAction("pass", user, player.socket, io);
+                        if (player.sid !== this.bankerIndex) break;
+                        this.bankerAction("pass", user, player.socket, io);
                         break;
                     case 6:
                         this.confirm("results", user, io);
