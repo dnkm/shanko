@@ -18,7 +18,7 @@ class Logger {
   }
 
   respLog(name, payload, msg) {
-    // console.log(name, msg);
+    console.log(name, msg);
   }
 }
 

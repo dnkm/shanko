@@ -111,7 +111,6 @@ class Room {
         });
         let p = this.findPlayer(user.sid);
         if (p === -1) socket.join(this.roomnumber);
-        else this.players[p].inRoom = true;
     }
 
     getSeated(data, user, socket, io) {
@@ -202,7 +201,6 @@ class Room {
             });
 
         if (player.isActive && this.phaseIndex !== 0) {
-            if (disconnect) player.inRoom = false;
             this.leavers.push({ user, socket });
             return;
         }
@@ -234,7 +232,7 @@ class Room {
         user.playing = false;
     }
 
-    leaveCancel(user, socket, io) {
+    cancelLeave(user, socket, io) {
         if (this.leavers.includes(user.sid)) {
             this.leavers = this.leavers.filter((sid) => sid !== user.sid);
             socket.emit("resp_ingame_leavecancel", { retcode: 0 });
@@ -257,7 +255,6 @@ class Room {
         this.losers = [];
         this.revealed = [];
         this.coins = {};
-        this.totalDraws = 0;
         this.deals = {};
         this.deck = newDeck();
         this.players.forEach((p) => {
@@ -421,10 +418,8 @@ class Room {
         )
             return;
         this.players[p].socket = socket;
-        if (data.action === "draw") {
+        if (data.action === "draw")
             this.players[p].cards.push(this.deck.pop());
-            this.totalDraws++;
-        }
         this.actions.push({ sid: user.sid, action: data.action });
         this.players[p].lastAction = data.action;
         this.debug(user.sid + " " + data.action);
@@ -853,7 +848,6 @@ class Room {
     filterPlayer(player) {
         let p = { ...player };
         delete p.lastAnimation;
-        delete p.inRoom;
         delete p.socket;
         return p;
     }
@@ -871,7 +865,6 @@ class Room {
             players: this.players.map((p) => {
                 if (typeof p !== "undefined") {
                     let player = { ...p };
-                    delete player.inRoom;
                     delete player.socket;
                     delete player.confirm;
                     delete player.lastAction;
